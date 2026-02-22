@@ -1,0 +1,28 @@
+{
+  "passRound": [
+    { "id": "p1", "question": "What is the capital of France?", "answer": "Paris" },
+    { "id": "p2", "question": "Which planet is known as the Red Planet?", "answer": "Mars" },
+    { "id": "p3", "question": "What is the largest ocean on Earth?", "answer": "Pacific Ocean" },
+    { "id": "p4", "question": "Who wrote 'Romeo and Juliet'?", "answer": "William Shakespeare" },
+    { "id": "p5", "question": "What is the chemical symbol for gold?", "answer": "Au" }
+  ],
+  "buzzerRound": [
+    { "id": "b1", "question": "Which element has the atomic number 1?", "answer": "Hydrogen" },
+    { "id": "b2", "question": "What is the square root of 144?", "answer": "12" },
+    { "id": "b3", "question": "In which year did the Titanic sink?", "answer": "1912" },
+    { "id": "b4", "question": "Who painted the Mona Lisa?", "answer": "Leonardo da Vinci" },
+    { "id": "b5", "question": "What is the currency of Japan?", "answer": "Yen" }
+  ],
+  "rapidFireRound": [
+    { "id": "r1", "question": "2 + 2 = ?", "answer": "4" },
+    { "id": "r2", "question": "Capital of Italy?", "answer": "Rome" },
+    { "id": "r3", "question": "Color of an emerald?", "answer": "Green" },
+    { "id": "r4", "question": "Opposite of 'hot'?", "answer": "Cold" },
+    { "id": "r5", "question": "How many legs does a spider have?", "answer": "8" },
+    { "id": "r6", "question": "Largest mammal?", "answer": "Blue Whale" },
+    { "id": "r7", "question": "Fastest land animal?", "answer": "Cheetah" },
+    { "id": "r8", "question": "First man on the moon?", "answer": "Neil Armstrong" },
+    { "id": "r9", "question": "Boiling point of water (Celsius)?", "answer": "100" },
+    { "id": "r10", "question": "Number of continents?", "answer": "7" }
+  ]
+}

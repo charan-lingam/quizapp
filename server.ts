@@ -1,0 +1,193 @@
+import express from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
+import { createServer as createViteServer } from "vite";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const PORT = 3000;
+
+interface Team {
+  id: string;
+  name: string;
+  score: number;
+  socketId: string;
+}
+
+interface Question {
+  id: string;
+  question: string;
+  answer: string;
+}
+
+interface QuizState {
+  teams: Record<string, Team>;
+  currentRound: number; // 0: Lobby, 1: Pass, 2: Buzzer, 3: Rapid Fire
+  currentQuestionIndex: number;
+  activeTeamId: string | null; // For Pass Round
+  buzzerLocked: boolean;
+  buzzerWinner: string | null;
+  buzzerReactionTime: number | null;
+  questionStartTime: number | null;
+  rapidFireTimer: number;
+  isRapidFireRunning: boolean;
+  questions: {
+    passRound: Question[];
+    buzzerRound: Question[];
+    rapidFireRound: Question[];
+  };
+}
+
+const questionsData = JSON.parse(fs.readFileSync(path.join(__dirname, "questions.json"), "utf8"));
+
+// Shuffle function
+function shuffle<T>(array: T[]): T[] {
+  return array.sort(() => Math.random() - 0.5);
+}
+
+const state: QuizState = {
+  teams: {},
+  currentRound: 0,
+  currentQuestionIndex: 0,
+  activeTeamId: null,
+  buzzerLocked: false,
+  buzzerWinner: null,
+  buzzerReactionTime: null,
+  questionStartTime: null,
+  rapidFireTimer: 5,
+  isRapidFireRunning: false,
+  questions: {
+    passRound: shuffle([...questionsData.passRound]),
+    buzzerRound: shuffle([...questionsData.buzzerRound]),
+    rapidFireRound: shuffle([...questionsData.rapidFireRound]),
+  },
+};
+
+async function startServer() {
+  const app = express();
+  const httpServer = createServer(app);
+  const io = new Server(httpServer, {
+    cors: {
+      origin: "*",
+    },
+  });
+
+  // Vite middleware for development
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    app.use(express.static("dist"));
+  }
+
+  io.on("connection", (socket) => {
+    console.log("User connected:", socket.id);
+
+    // Send initial state
+    socket.emit("stateUpdate", state);
+
+    socket.on("registerTeam", (name: string) => {
+      const teamId = name.toLowerCase().replace(/\s+/g, "-");
+      if (state.teams[teamId]) {
+        state.teams[teamId].socketId = socket.id;
+      } else {
+        state.teams[teamId] = {
+          id: teamId,
+          name,
+          score: 0,
+          socketId: socket.id,
+        };
+      }
+      socket.emit("teamRegistered", state.teams[teamId]);
+      io.emit("stateUpdate", state);
+    });
+
+    // Admin Controls
+    socket.on("adminAction", (action: any) => {
+      // Simple password check could be added here if needed
+      const { type, payload } = action;
+
+      switch (type) {
+        case "START_ROUND":
+          state.currentRound = payload.round;
+          state.currentQuestionIndex = 0;
+          state.buzzerLocked = false;
+          state.buzzerWinner = null;
+          state.buzzerReactionTime = null;
+          state.isRapidFireRunning = false;
+          if (state.currentRound === 1) {
+            const teamIds = Object.keys(state.teams);
+            state.activeTeamId = teamIds.length > 0 ? teamIds[0] : null;
+          }
+          break;
+
+        case "NEXT_QUESTION":
+          state.currentQuestionIndex++;
+          state.buzzerLocked = false;
+          state.buzzerWinner = null;
+          state.buzzerReactionTime = null;
+          state.questionStartTime = Date.now();
+          break;
+
+        case "ADJUST_SCORE":
+          if (state.teams[payload.teamId]) {
+            state.teams[payload.teamId].score += payload.amount;
+          }
+          break;
+
+        case "RESET_BUZZER":
+          state.buzzerLocked = false;
+          state.buzzerWinner = null;
+          state.buzzerReactionTime = null;
+          state.questionStartTime = Date.now();
+          break;
+
+        case "PASS_CONTROL":
+          const teamIds = Object.keys(state.teams);
+          const currentIndex = teamIds.indexOf(state.activeTeamId || "");
+          const nextIndex = (currentIndex + 1) % teamIds.length;
+          state.activeTeamId = teamIds[nextIndex];
+          break;
+
+        case "TOGGLE_RAPID_FIRE":
+          state.isRapidFireRunning = payload.running;
+          break;
+          
+        case "RESET_QUIZ":
+            state.currentRound = 0;
+            state.currentQuestionIndex = 0;
+            state.teams = {};
+            break;
+      }
+
+      io.emit("stateUpdate", state);
+    });
+
+    socket.on("buzz", (teamId: string) => {
+      if (state.currentRound === 2 && !state.buzzerLocked) {
+        state.buzzerLocked = true;
+        state.buzzerWinner = teamId;
+        state.buzzerReactionTime = state.questionStartTime ? Date.now() - state.questionStartTime : 0;
+        io.emit("stateUpdate", state);
+        io.emit("buzzerEffect", { teamId, reactionTime: state.buzzerReactionTime });
+      }
+    });
+
+    socket.on("disconnect", () => {
+      console.log("User disconnected:", socket.id);
+    });
+  });
+
+  httpServer.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
+  });
+}
+
+startServer();

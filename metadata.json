@@ -1,0 +1,5 @@
+{
+  "name": "NeonQuiz - Local Real-Time Quiz System",
+  "description": "A high-energy, local network quiz application with buzzer rounds, pass rounds, and rapid-fire modes. Optimized for mobile participants and projector displays.",
+  "requestFramePermissions": []
+}
