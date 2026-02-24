@@ -3,14 +3,26 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { createServer as createViteServer } from "vite";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
-import os from "os";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
+const HOST = process.env.HOST || "0.0.0.0";
+
+function getLanIPv4s(): string[] {
+  const ifaces = os.networkInterfaces();
+  const ips: string[] = [];
+  for (const net of Object.values(ifaces)) {
+    for (const addr of net ?? []) {
+      if (addr.family === "IPv4" && !addr.internal) ips.push(addr.address);
+    }
+  }
+  return Array.from(new Set(ips));
+}
 
 interface Team {
   id: string;
@@ -78,6 +90,11 @@ async function startServer() {
     cors: {
       origin: "*",
     },
+  });
+
+  app.get("/api/network", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ port: PORT, ips: getLanIPv4s() });
   });
 
   // Vite middleware for development
@@ -262,17 +279,10 @@ async function startServer() {
     }
   }, 1000);
 
-  httpServer.listen(PORT, "0.0.0.0", () => {
-    const nets = os.networkInterfaces();
-    let detectedIp = "localhost";
-    for (const name of Object.keys(nets)) {
-      for (const net of nets[name]!) {
-        if (net.family === "IPv4" && !net.internal) {
-          detectedIp = net.address;
-          break;
-        }
-      }
-    }
+  httpServer.listen(PORT, HOST, () => {
+    const lan = getLanIPv4s();
+    const detectedIp = lan[0] ?? "localhost";
+
     state.localIp = detectedIp;
     io.emit("stateUpdate", state);
 
@@ -284,6 +294,11 @@ async function startServer() {
     
     console.log(`\n2. ON MOBILE PHONES (Same Wi-Fi):`);
     console.log(`   http://${detectedIp}:${PORT}`);
+
+    if (lan.length > 1) {
+      console.log(`\nOTHER LAN OPTIONS:`);
+      for (const ip of lan) console.log(`   http://${ip}:${PORT}`);
+    }
     
     console.log("\n" + "=".repeat(60));
     console.log("TROUBLESHOOTING:");

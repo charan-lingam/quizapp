@@ -16,35 +16,26 @@ A high-energy, real-time quiz application built with React, Express, and Socket.
 
 ## How to Run Locally
 
-1. **Install Dependencies:**
+1. Install dependencies:
    ```bash
    npm install
    ```
 
-2. **Start the Server:**
+2. Start the server:
    ```bash
    npm run dev
    ```
 
-3. **Access the App:**
+3. Open the app:
    - **Laptop:** `http://localhost:3000`
-   - **Mobile:** `http://<your-laptop-ip>:3000` (Devices must be on the same Wi-Fi)
+   - **Mobile:** open the **“Open this on mobile”** URL shown on the laptop (same Wi‑Fi), e.g. `http://<your-laptop-ip>:3000`
 
-## How to Publish to GitHub
+### If the phone can’t connect
 
-To put this project on your own GitHub:
-
-1. **Create a new repository** on [GitHub](https://github.com/new).
-2. **Open your terminal** in the project folder.
-3. **Initialize and push:**
-   ```bash
-   git init
-   get add .
-   git commit -m "Initial commit: NeonQuiz"
-   git branch -M main
-   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-   git push -u origin main
-   ```
+- **Windows Firewall**: allow inbound TCP on port `3000` (Node.js).
+- **Wrong network**: make sure the phone is on the same Wi‑Fi (not mobile data).
+- **VPN / hotspot isolation**: some networks block device-to-device traffic; try another Wi‑Fi or a phone hotspot.
 
 ## Customizing Questions
+
 Edit `questions.json` to add your own rounds and questions.

@@ -22,6 +22,11 @@ function cn(...inputs: ClassValue[]) {
 }
 
 // --- Types ---
+interface NetworkInfo {
+  port: number;
+  ips: string[];
+}
+
 interface Team {
   id: string;
   name: string;
@@ -57,7 +62,7 @@ interface QuizState {
 
 // --- Components ---
 
-const Button = ({ 
+const Button = ({
   children, 
   onClick, 
   variant = "primary", 
@@ -106,7 +111,7 @@ const Card = ({ children, className, onClick }: { children: React.ReactNode; cla
 
 // --- Sub-Components ---
 
-const RoleSelect = ({ setView, state }: { setView: (v: any) => void; state: QuizState }) => (
+const RoleSelect = ({ setView, state, lanUrls }: { setView: (v: any) => void; state: QuizState; lanUrls: string[] }) => (
   <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 gap-8">
     {/* Institutional Headers */}
     <div className="absolute top-8 left-0 w-full flex justify-between items-center px-12">
@@ -154,16 +159,19 @@ const RoleSelect = ({ setView, state }: { setView: (v: any) => void; state: Quiz
       </Card>
     </div>
 
-    {/* Connection Helper */}
-    <div className="mt-4 p-4 bg-slate-900/50 border border-white/5 rounded-2xl max-w-lg text-center">
-      <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-2">Connection Tip</p>
-      <p className="text-sm text-slate-400">
-        To connect mobile phones, type this address in the mobile browser:
-        <br />
-        <span className="text-cyan-400 font-mono text-lg font-bold">
-          http://{state.localIp === "Detecting..." ? window.location.hostname : state.localIp}:3000
-        </span>
-      </p>
+    <div className="w-full max-w-4xl">
+      <Card className="bg-slate-950/40">
+        <div className="text-sm text-slate-400 font-medium">Open this on mobile (same Wi‑Fi):</div>
+        <div className="mt-2 font-mono text-slate-200 break-all">
+          {lanUrls[0] ??
+            `http://${state.localIp === "Detecting..." ? window.location.hostname : state.localIp}:3000`}
+        </div>
+        {lanUrls.length > 1 && (
+          <div className="mt-2 text-xs text-slate-500">
+            Other options: {lanUrls.slice(1).join("  •  ")}
+          </div>
+        )}
+      </Card>
     </div>
   </div>
 );
@@ -760,7 +768,7 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
           </div>
         </div>
         <div className="text-sm">
-          Local Server IP: <span className="text-slate-300 font-mono">
+          Local Server: <span className="text-slate-300 font-mono">
             http://{state.localIp === "Detecting..." ? window.location.hostname : state.localIp}:3000
           </span>
         </div>
@@ -779,6 +787,7 @@ export default function App() {
   const [teamNameInput, setTeamNameInput] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [lanUrls, setLanUrls] = useState<string[]>([]);
 
   useEffect(() => {
     const newSocket = io();
@@ -794,6 +803,21 @@ export default function App() {
 
     return () => {
       newSocket.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/network")
+      .then((r) => (r.ok ? (r.json() as Promise<NetworkInfo>) : null))
+      .then((data) => {
+        if (!data || cancelled) return;
+        const urls = (data.ips ?? []).map((ip) => `http://${ip}:${data.port}`);
+        setLanUrls(urls);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
     };
   }, []);
 
@@ -836,7 +860,7 @@ export default function App() {
 
   return (
     <div className="font-sans selection:bg-cyan-400 selection:text-black">
-      {view === "role-select" && <RoleSelect setView={setView} state={state} />}
+      {view === "role-select" && <RoleSelect setView={setView} state={state} lanUrls={lanUrls} />}
       {view === "registration" && (
         <Registration 
           teamNameInput={teamNameInput} 
