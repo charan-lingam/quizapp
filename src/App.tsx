@@ -32,6 +32,7 @@ interface Team {
 interface Question {
   id: string;
   question: string;
+  options: string[];
   answer: string;
 }
 
@@ -46,6 +47,7 @@ interface QuizState {
   questionStartTime: number | null;
   rapidFireTimer: number;
   isRapidFireRunning: boolean;
+  localIp: string;
   questions: {
     passRound: Question[];
     buzzerRound: Question[];
@@ -60,13 +62,15 @@ const Button = ({
   onClick, 
   variant = "primary", 
   className,
-  disabled 
+  disabled,
+  ...props
 }: { 
   children: React.ReactNode; 
   onClick?: () => void; 
   variant?: "primary" | "secondary" | "danger" | "success" | "neon";
   className?: string;
   disabled?: boolean;
+  [key: string]: any;
 }) => {
   const variants = {
     primary: "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20",
@@ -102,7 +106,7 @@ const Card = ({ children, className, onClick }: { children: React.ReactNode; cla
 
 // --- Sub-Components ---
 
-const RoleSelect = ({ setView }: { setView: (v: any) => void }) => (
+const RoleSelect = ({ setView, state }: { setView: (v: any) => void; state: QuizState }) => (
   <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 gap-8">
     {/* Institutional Headers */}
     <div className="absolute top-8 left-0 w-full flex justify-between items-center px-12">
@@ -149,6 +153,18 @@ const RoleSelect = ({ setView }: { setView: (v: any) => void }) => (
         <Button variant="danger" className="w-full mt-2">Admin Login</Button>
       </Card>
     </div>
+
+    {/* Connection Helper */}
+    <div className="mt-4 p-4 bg-slate-900/50 border border-white/5 rounded-2xl max-w-lg text-center">
+      <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-2">Connection Tip</p>
+      <p className="text-sm text-slate-400">
+        To connect mobile phones, type this address in the mobile browser:
+        <br />
+        <span className="text-cyan-400 font-mono text-lg font-bold">
+          http://{state.localIp === "Detecting..." ? window.location.hostname : state.localIp}:3000
+        </span>
+      </p>
+    </div>
   </div>
 );
 
@@ -156,18 +172,27 @@ const Registration = ({
   teamNameInput, 
   setTeamNameInput, 
   registerTeam, 
-  setView 
+  setView,
+  state
 }: { 
   teamNameInput: string; 
   setTeamNameInput: (v: string) => void; 
   registerTeam: () => void; 
   setView: (v: any) => void;
+  state: QuizState;
 }) => (
-  <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+  <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 gap-6">
     <Card className="w-full max-w-md">
-      <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-        <Users className="text-cyan-400" /> Register Team
-      </h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <Users className="text-cyan-400" /> Join Quiz
+        </h2>
+        <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[10px] text-emerald-400 font-black uppercase">Connected</span>
+        </div>
+      </div>
+
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-2">Team Name</label>
@@ -183,6 +208,25 @@ const Registration = ({
         <button onClick={() => setView("role-select")} className="w-full text-slate-500 text-sm hover:text-slate-400 transition-colors">Back to Selection</button>
       </div>
     </Card>
+
+    {/* Teams already in */}
+    <div className="w-full max-w-md space-y-3">
+      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest text-center">Teams in the Arena ({Object.keys(state.teams).length})</p>
+      <div className="flex flex-wrap justify-center gap-2">
+        {Object.values(state.teams).map((team: any) => (
+          <div key={team.id} className="px-3 py-1 bg-slate-900 border border-white/5 rounded-lg text-sm text-slate-400">
+            {team.name}
+          </div>
+        ))}
+        {Object.keys(state.teams).length === 0 && (
+          <p className="text-slate-600 text-xs italic">Waiting for teams to join...</p>
+        )}
+      </div>
+    </div>
+
+    <div className="text-[10px] text-slate-600 uppercase font-bold tracking-tighter text-center max-w-xs">
+      Note: All devices must be on the same Wi-Fi network to participate.
+    </div>
   </div>
 );
 
@@ -190,14 +234,21 @@ const TeamControl = ({
   myTeam, 
   state, 
   socket, 
-  handleBuzz 
+  handleBuzz,
+  submitAnswer
 }: { 
   myTeam: Team; 
   state: QuizState; 
   socket: Socket | null; 
   handleBuzz: () => void;
+  submitAnswer: (answer: string) => void;
 }) => {
   const currentTeam = state.teams[myTeam.id] || myTeam;
+  const currentQuestionSet = 
+    state.currentRound === 1 ? state.questions.passRound :
+    state.currentRound === 2 ? state.questions.buzzerRound :
+    state.currentRound === 3 ? state.questions.rapidFireRound : [];
+  const currentQuestion = currentQuestionSet[state.currentQuestionIndex];
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
@@ -228,14 +279,22 @@ const TeamControl = ({
         {state.currentRound === 1 && (
           <div className="text-center space-y-6 w-full max-w-sm">
             <h3 className="text-xl font-bold text-slate-400 uppercase tracking-widest">Pass Round</h3>
+            
+            {/* Question Display on Mobile */}
+            <div className="p-4 bg-slate-900 border border-white/10 rounded-2xl text-lg font-medium text-white">
+              {currentQuestion?.question}
+            </div>
+
             {state.activeTeamId === myTeam.id ? (
               <motion.div 
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="p-8 bg-emerald-500/10 border-2 border-emerald-500 rounded-3xl space-y-4"
+                className="space-y-6"
               >
-                <div className="text-emerald-400 font-black text-3xl">YOUR TURN!</div>
-                <p className="text-slate-300">Answer the question displayed on the main screen.</p>
+                <div className="p-8 bg-emerald-500/10 border-2 border-emerald-500 rounded-3xl">
+                  <div className="text-emerald-400 font-black text-3xl">YOUR TURN!</div>
+                  <p className="text-slate-300 mt-4 text-lg">Answer the question verbally to the quizmaster.</p>
+                </div>
               </motion.div>
             ) : (
               <div className="p-8 bg-slate-900 border border-white/5 rounded-3xl opacity-50">
@@ -249,46 +308,55 @@ const TeamControl = ({
           <div className="w-full max-w-md flex flex-col items-center gap-8">
             <h3 className="text-xl font-bold text-slate-400 uppercase tracking-widest">Buzzer Round</h3>
             
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              disabled={state.buzzerLocked}
-              onClick={handleBuzz}
-              className={cn(
-                "w-64 h-64 rounded-full flex flex-col items-center justify-center gap-2 transition-all shadow-2xl relative overflow-hidden",
-                state.buzzerLocked 
-                  ? (state.buzzerWinner === myTeam.id ? "bg-emerald-600 shadow-emerald-500/50" : "bg-slate-800 opacity-50")
-                  : "bg-rose-600 hover:bg-rose-500 shadow-rose-500/50 active:shadow-none"
-              )}
-            >
-              {state.buzzerLocked ? (
-                state.buzzerWinner === myTeam.id ? (
-                  <>
-                    <Check className="w-20 h-20" />
-                    <span className="font-black text-xl">LOCKED IN!</span>
-                    <span className="text-sm opacity-80">{state.buzzerReactionTime}ms</span>
-                  </>
-                ) : (
+            {/* Question Display on Mobile */}
+            <div className="p-4 bg-slate-900 border border-white/10 rounded-2xl text-lg font-medium text-white text-center w-full">
+              {currentQuestion?.question}
+            </div>
+
+            {state.buzzerLocked && state.buzzerWinner === myTeam.id ? (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full space-y-6"
+              >
+                <div className="text-center p-8 bg-emerald-500/20 rounded-3xl border-2 border-emerald-500">
+                  <div className="text-emerald-400 font-black text-3xl">YOU BUZZED!</div>
+                  <p className="text-slate-300 mt-4 text-lg">Answer the question verbally now!</p>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                disabled={state.buzzerLocked}
+                onClick={handleBuzz}
+                className={cn(
+                  "w-64 h-64 rounded-full flex flex-col items-center justify-center gap-2 transition-all shadow-2xl relative overflow-hidden",
+                  state.buzzerLocked 
+                    ? "bg-slate-800 opacity-50"
+                    : "bg-rose-600 hover:bg-rose-500 shadow-rose-500/50 active:shadow-none"
+                )}
+              >
+                {state.buzzerLocked ? (
                   <>
                     <X className="w-20 h-20" />
                     <span className="font-black text-xl">LOCKED</span>
                   </>
-                )
-              ) : (
-                <>
-                  <Zap className="w-20 h-20" />
-                  <span className="font-black text-3xl">BUZZ</span>
-                </>
-              )}
-              
-              {/* Glow effect */}
-              {!state.buzzerLocked && (
-                <motion.div 
-                  animate={{ opacity: [0.2, 0.5, 0.2] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                  className="absolute inset-0 bg-white/20"
-                />
-              )}
-            </motion.button>
+                ) : (
+                  <>
+                    <Zap className="w-20 h-20" />
+                    <span className="font-black text-3xl">BUZZ</span>
+                  </>
+                )}
+                
+                {!state.buzzerLocked && (
+                  <motion.div 
+                    animate={{ opacity: [0.2, 0.5, 0.2] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    className="absolute inset-0 bg-white/20"
+                  />
+                )}
+              </motion.button>
+            )}
 
             {state.buzzerLocked && state.buzzerWinner !== myTeam.id && (
               <p className="text-rose-400 font-bold animate-pulse">
@@ -301,9 +369,31 @@ const TeamControl = ({
         {state.currentRound === 3 && (
           <div className="text-center space-y-6 w-full max-w-sm">
             <h3 className="text-xl font-bold text-slate-400 uppercase tracking-widest">Rapid Fire</h3>
-            <div className="p-8 bg-cyan-500/10 border-2 border-cyan-500 rounded-3xl space-y-4">
-              <div className="text-cyan-400 font-black text-3xl">GO GO GO!</div>
-              <p className="text-slate-300">Answer as many as you can verbally!</p>
+            
+            {/* Question Display on Mobile */}
+            <div className="p-4 bg-slate-900 border border-white/10 rounded-2xl text-lg font-medium text-white">
+              {currentQuestion?.question}
+            </div>
+
+            <div className="space-y-6">
+              <div className="p-6 bg-cyan-500/10 border-2 border-cyan-500 rounded-3xl">
+                <div className="text-cyan-400 font-black text-3xl">GO GO GO!</div>
+                <p className="text-slate-300 text-sm mt-2">Tap the correct answer fast!</p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                {currentQuestion?.options.map((opt, i) => (
+                  <Button 
+                    key={i} 
+                    variant="neon" 
+                    onClick={() => submitAnswer(opt)}
+                    className="text-lg py-4"
+                    disabled={!state.isRapidFireRunning}
+                  >
+                    {opt}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -375,7 +465,12 @@ const AdminPanel = ({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Round Control */}
           <Card className="space-y-6">
-            <h3 className="text-xl font-bold border-b border-white/10 pb-2">Round Control</h3>
+            <div className="flex justify-between items-center border-b border-white/10 pb-2">
+              <h3 className="text-xl font-bold">Round Control</h3>
+              <div className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">
+                R1: 1pt | R2: 1.5pt | R3: 2pt
+              </div>
+            </div>
             <div className="grid grid-cols-1 gap-3">
               <Button 
                 variant={state.currentRound === 1 ? "primary" : "secondary"} 
@@ -415,6 +510,15 @@ const AdminPanel = ({
                 {state.currentRound === 2 && (
                   <Button onClick={() => adminAction("RESET_BUZZER")} variant="danger" className="w-full">Reset Buzzer</Button>
                 )}
+                {state.currentRound === 3 && (
+                  <Button 
+                    onClick={() => adminAction("TOGGLE_RAPID_FIRE", { running: !state.isRapidFireRunning })} 
+                    variant={state.isRapidFireRunning ? "danger" : "success"} 
+                    className="w-full flex items-center justify-center gap-2"
+                  >
+                    {state.isRapidFireRunning ? <><X size={18} /> Stop Timer</> : <><Zap size={18} /> Start Timer</>}
+                  </Button>
+                )}
               </div>
             )}
           </Card>
@@ -442,10 +546,20 @@ const AdminPanel = ({
                       <td className="py-4 text-2xl font-mono text-cyan-400">{team.score}</td>
                       <td className="py-4">
                         <div className="flex gap-2">
-                          <button onClick={() => adminAction("ADJUST_SCORE", { teamId: team.id, amount: 10 })} className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition-colors"><Check size={18} /></button>
-                          <button onClick={() => adminAction("ADJUST_SCORE", { teamId: team.id, amount: -5 })} className="p-2 bg-rose-500/20 text-rose-400 rounded-lg hover:bg-rose-500/30 transition-colors"><X size={18} /></button>
-                          <button onClick={() => adminAction("ADJUST_SCORE", { teamId: team.id, amount: 1 })} className="p-2 bg-slate-700 text-white rounded-lg">+1</button>
-                          <button onClick={() => adminAction("ADJUST_SCORE", { teamId: team.id, amount: -1 })} className="p-2 bg-slate-700 text-white rounded-lg">-1</button>
+                          {state.currentRound > 0 && (
+                            <button 
+                              onClick={() => {
+                                const points = state.currentRound === 1 ? 1 : state.currentRound === 2 ? 1.5 : 2;
+                                adminAction("ADJUST_SCORE", { teamId: team.id, amount: points });
+                              }} 
+                              className="px-3 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition-colors font-bold flex items-center gap-1"
+                            >
+                              <Check size={16} /> 
+                              +{state.currentRound === 1 ? "1" : state.currentRound === 2 ? "1.5" : "2"}
+                            </button>
+                          )}
+                          <button onClick={() => adminAction("ADJUST_SCORE", { teamId: team.id, amount: 1 })} className="p-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors">+1</button>
+                          <button onClick={() => adminAction("ADJUST_SCORE", { teamId: team.id, amount: -1 })} className="p-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors">-1</button>
                         </div>
                       </td>
                     </tr>
@@ -489,8 +603,14 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
           <p className="text-2xl text-slate-400 font-bold mt-2">{roundNames[state.currentRound]}</p>
         </div>
         <div className="text-right">
-          <div className="text-slate-500 font-mono text-xl">QUESTION</div>
-          <div className="text-5xl font-black text-white">{state.currentQuestionIndex + 1} <span className="text-slate-600 text-3xl">/ {currentQuestionSet.length}</span></div>
+          {state.currentRound === 3 && state.isRapidFireRunning && (
+            <div className="mr-8 inline-block align-bottom">
+              <div className="text-rose-500 font-mono text-xl">TIMER</div>
+              <div className="text-5xl font-black text-rose-500">{state.rapidFireTimer}s</div>
+            </div>
+          )}
+          <div className="text-slate-500 font-mono text-xl inline-block">QUESTION</div>
+          <div className="text-5xl font-black text-white inline-block ml-4">{state.currentQuestionIndex + 1} <span className="text-slate-600 text-3xl">/ {currentQuestionSet.length}</span></div>
         </div>
       </div>
 
@@ -502,6 +622,15 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
             <div className="text-center space-y-8">
               <h2 className="text-8xl font-black text-white">GET READY!</h2>
               <p className="text-3xl text-slate-400">Teams are joining the arena...</p>
+              
+              {/* Big IP Display for Lobby */}
+              <div className="mt-12 p-8 bg-cyan-400/5 border-2 border-cyan-400/20 rounded-[2rem] inline-block">
+                <p className="text-slate-500 font-bold uppercase tracking-widest mb-2">Connect your phones to:</p>
+                <p className="text-6xl font-mono font-black text-cyan-400">
+                  http://{state.localIp === "Detecting..." ? window.location.hostname : state.localIp}:3000
+                </p>
+              </div>
+
               <div className="flex flex-wrap justify-center gap-4 mt-12">
                 {(Object.values(state.teams) as Team[]).map(team => (
                   <motion.div 
@@ -533,6 +662,41 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
                     {currentQuestion?.question || "Waiting for next question..."}
                   </h2>
                 </div>
+
+                {/* Options Display - Only for Rapid Fire */}
+                {state.currentRound === 3 && currentQuestion?.options && (
+                  <div className="space-y-8 w-full">
+                    {/* Rapid Fire Timer Bar */}
+                    <div className="max-w-4xl mx-auto w-full space-y-2">
+                      <div className="flex justify-between items-end px-2">
+                        <span className="text-cyan-400 font-black text-2xl">TIME LEFT</span>
+                        <span className="text-cyan-400 font-mono text-4xl">{state.rapidFireTimer}s</span>
+                      </div>
+                      <div className="h-4 bg-slate-800 rounded-full overflow-hidden border border-white/10">
+                        <motion.div 
+                          initial={false}
+                          animate={{ width: `${(state.rapidFireTimer / 5) * 100}%` }}
+                          className={cn(
+                            "h-full transition-colors",
+                            state.rapidFireTimer <= 2 ? "bg-rose-500 shadow-[0_0_20px_#f43f5e]" : "bg-cyan-400 shadow-[0_0_20px_#22d3ee]"
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-6 max-w-4xl mx-auto w-full">
+                      {currentQuestion.options.map((opt, i) => (
+                        <div 
+                          key={i} 
+                          className="p-6 bg-slate-900/80 border border-white/10 rounded-2xl text-3xl font-bold text-center text-slate-300"
+                        >
+                          <span className="text-cyan-400 mr-4">{String.fromCharCode(65 + i)}.</span>
+                          {opt}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {state.currentRound === 1 && state.activeTeamId && (
                   <div className="flex items-center justify-center gap-6">
@@ -596,7 +760,9 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
           </div>
         </div>
         <div className="text-sm">
-          Local Server IP: <span className="text-slate-300 font-mono">http://{window.location.hostname}:3000</span>
+          Local Server IP: <span className="text-slate-300 font-mono">
+            http://{state.localIp === "Detecting..." ? window.location.hostname : state.localIp}:3000
+          </span>
         </div>
       </div>
     </div>
@@ -653,6 +819,12 @@ export default function App() {
     }
   };
 
+  const submitAnswer = (answer: string) => {
+    if (socket && myTeam) {
+      socket.emit("submitAnswer", { teamId: myTeam.id, answer });
+    }
+  };
+
   if (!state) return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center text-cyan-400">
       <div className="animate-pulse flex flex-col items-center gap-4">
@@ -664,13 +836,14 @@ export default function App() {
 
   return (
     <div className="font-sans selection:bg-cyan-400 selection:text-black">
-      {view === "role-select" && <RoleSelect setView={setView} />}
+      {view === "role-select" && <RoleSelect setView={setView} state={state} />}
       {view === "registration" && (
         <Registration 
           teamNameInput={teamNameInput} 
           setTeamNameInput={setTeamNameInput} 
           registerTeam={registerTeam} 
           setView={setView} 
+          state={state}
         />
       )}
       {view === "team-control" && myTeam && (
@@ -679,6 +852,7 @@ export default function App() {
           state={state} 
           socket={socket} 
           handleBuzz={handleBuzz} 
+          submitAnswer={submitAnswer}
         />
       )}
       {view === "admin" && (

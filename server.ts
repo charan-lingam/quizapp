@@ -5,6 +5,7 @@ import { createServer as createViteServer } from "vite";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import os from "os";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,6 +22,7 @@ interface Team {
 interface Question {
   id: string;
   question: string;
+  options: string[];
   answer: string;
 }
 
@@ -35,6 +37,7 @@ interface QuizState {
   questionStartTime: number | null;
   rapidFireTimer: number;
   isRapidFireRunning: boolean;
+  localIp: string;
   questions: {
     passRound: Question[];
     buzzerRound: Question[];
@@ -60,6 +63,7 @@ const state: QuizState = {
   questionStartTime: null,
   rapidFireTimer: 5,
   isRapidFireRunning: false,
+  localIp: "Detecting...",
   questions: {
     passRound: shuffle([...questionsData.passRound]),
     buzzerRound: shuffle([...questionsData.buzzerRound]),
@@ -138,7 +142,7 @@ async function startServer() {
 
         case "ADJUST_SCORE":
           if (state.teams[payload.teamId]) {
-            state.teams[payload.teamId].score += payload.amount;
+            state.teams[payload.teamId].score = Math.max(0, state.teams[payload.teamId].score + payload.amount);
           }
           break;
 
@@ -180,13 +184,112 @@ async function startServer() {
       }
     });
 
+    socket.on("submitAnswer", ({ teamId, answer }: { teamId: string, answer: string }) => {
+      const currentQuestionSet = 
+        state.currentRound === 1 ? state.questions.passRound :
+        state.currentRound === 2 ? state.questions.buzzerRound :
+        state.currentRound === 3 ? state.questions.rapidFireRound : [];
+      
+      const currentQuestion = currentQuestionSet[state.currentQuestionIndex];
+      
+      if (!currentQuestion) return;
+
+      // Check if it's the team's turn or if they won the buzzer
+      const isAllowed = 
+        (state.currentRound === 1 && state.activeTeamId === teamId) ||
+        (state.currentRound === 2 && state.buzzerWinner === teamId) ||
+        (state.currentRound === 3 && state.isRapidFireRunning); // In Rapid Fire, anyone can answer? 
+        // Actually for Rapid Fire, usually it's one team at a time, but let's assume activeTeamId for RF too if set.
+        // For now, let's just check if it's correct.
+
+      if (isAllowed && answer === currentQuestion.answer) {
+        const points = state.currentRound === 1 ? 1 : state.currentRound === 2 ? 1.5 : 2;
+        state.teams[teamId].score += points;
+        
+        // Auto-advance for ALL rounds after correct answer
+        state.currentQuestionIndex++;
+        state.buzzerLocked = false;
+        state.buzzerWinner = null;
+        state.buzzerReactionTime = null;
+        state.questionStartTime = Date.now();
+        state.rapidFireTimer = 5; // Reset timer for Round 3
+        
+        if (state.currentRound === 1) {
+          // Pass control to next team automatically in Pass round
+          const teamIds = Object.keys(state.teams);
+          const currentIndex = teamIds.indexOf(state.activeTeamId || "");
+          const nextIndex = (currentIndex + 1) % teamIds.length;
+          state.activeTeamId = teamIds[nextIndex];
+        }
+
+        // Check if we ran out of questions in Rapid Fire
+        if (state.currentRound === 3 && state.currentQuestionIndex >= state.questions.rapidFireRound.length) {
+          state.isRapidFireRunning = false;
+          state.currentQuestionIndex = state.questions.rapidFireRound.length - 1;
+        }
+      } else if (isAllowed && answer !== currentQuestion.answer) {
+        // Optional: penalty? User said "no minus points"
+        // Just advance or reset buzzer
+        if (state.currentRound === 2) {
+          state.buzzerLocked = false;
+          state.buzzerWinner = null;
+        }
+      }
+
+      io.emit("stateUpdate", state);
+    });
+
     socket.on("disconnect", () => {
       console.log("User disconnected:", socket.id);
     });
   });
 
+  // Rapid Fire Timer Logic
+  setInterval(() => {
+    if (state.currentRound === 3 && state.isRapidFireRunning) {
+      state.rapidFireTimer -= 1;
+      if (state.rapidFireTimer <= 0) {
+        state.currentQuestionIndex++;
+        state.rapidFireTimer = 5;
+        
+        // Check if we ran out of questions
+        if (state.currentQuestionIndex >= state.questions.rapidFireRound.length) {
+          state.isRapidFireRunning = false;
+          state.currentQuestionIndex = state.questions.rapidFireRound.length - 1;
+        }
+      }
+      io.emit("stateUpdate", state);
+    }
+  }, 1000);
+
   httpServer.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    const nets = os.networkInterfaces();
+    let detectedIp = "localhost";
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name]!) {
+        if (net.family === "IPv4" && !net.internal) {
+          detectedIp = net.address;
+          break;
+        }
+      }
+    }
+    state.localIp = detectedIp;
+    io.emit("stateUpdate", state);
+
+    console.log("\n" + "=".repeat(60));
+    console.log(`🚀 NEONQUIZ SERVER IS LIVE!`);
+    console.log("=".repeat(60));
+    console.log(`\n1. ON THIS LAPTOP:`);
+    console.log(`   http://localhost:${PORT}`);
+    
+    console.log(`\n2. ON MOBILE PHONES (Same Wi-Fi):`);
+    console.log(`   http://${detectedIp}:${PORT}`);
+    
+    console.log("\n" + "=".repeat(60));
+    console.log("TROUBLESHOOTING:");
+    console.log("- Make sure both devices are on the SAME Wi-Fi network.");
+    console.log("- Check if your Laptop Firewall is blocking port 3000.");
+    console.log("=".repeat(60) + "\n");
   });
 }
 

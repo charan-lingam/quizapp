@@ -1,20 +1,50 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# NeonQuiz 🚀
 
-# Run and deploy your AI Studio app
+A high-energy, real-time quiz application built with React, Express, and Socket.io. Designed for live events with a Main Display and mobile-based team controls.
 
-This contains everything you need to run your app locally.
+## Features
+- **Round 1: Pass Round** - Questions passed between teams.
+- **Round 2: Buzzer Round** - Real-time buzzer with reaction time tracking.
+- **Round 3: Rapid Fire** - 5-second countdown per question with automatic scoring.
+- **Real-time Leaderboard** - Live score updates on the main screen.
+- **Mobile Integration** - Participants join via their mobile browsers.
 
-View your app in AI Studio: https://ai.studio/apps/4bd6299b-b8ca-4e06-b7c1-4f736753c84c
+## Tech Stack
+- **Frontend:** React, Tailwind CSS, Framer Motion, Lucide Icons.
+- **Backend:** Node.js, Express, Socket.io.
+- **Tooling:** Vite, TypeScript.
 
-## Run Locally
+## How to Run Locally
 
-**Prerequisites:**  Node.js
+1. **Install Dependencies:**
+   ```bash
+   npm install
+   ```
 
+2. **Start the Server:**
+   ```bash
+   npm run dev
+   ```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+3. **Access the App:**
+   - **Laptop:** `http://localhost:3000`
+   - **Mobile:** `http://<your-laptop-ip>:3000` (Devices must be on the same Wi-Fi)
+
+## How to Publish to GitHub
+
+To put this project on your own GitHub:
+
+1. **Create a new repository** on [GitHub](https://github.com/new).
+2. **Open your terminal** in the project folder.
+3. **Initialize and push:**
+   ```bash
+   git init
+   get add .
+   git commit -m "Initial commit: NeonQuiz"
+   git branch -M main
+   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+   git push -u origin main
+   ```
+
+## Customizing Questions
+Edit `questions.json` to add your own rounds and questions.
