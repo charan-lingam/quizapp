@@ -252,12 +252,19 @@ const TeamControl = ({
   handleBuzz: () => void;
   submitAnswer: (answer: string) => void;
 }) => {
+  const [lockedRapidFireAnswer, setLockedRapidFireAnswer] = useState<string | null>(null);
+
   const currentTeam = state.teams[myTeam.id] || myTeam;
   const currentQuestionSet = 
     state.currentRound === 1 ? state.questions.passRound :
     state.currentRound === 2 ? state.questions.buzzerRound :
     state.currentRound === 3 ? state.questions.rapidFireRound : [];
   const currentQuestion = currentQuestionSet[state.currentQuestionIndex];
+
+  useEffect(() => {
+    // Reset locked option whenever round or question changes
+    setLockedRapidFireAnswer(null);
+  }, [state.currentRound, currentQuestion?.id]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
@@ -395,11 +402,25 @@ const TeamControl = ({
                   <Button 
                     key={i} 
                     variant="neon" 
-                    onClick={() => submitAnswer(opt)}
-                    className="text-lg py-4"
-                    disabled={!state.isRapidFireRunning}
+                    onClick={() => {
+                      if (!state.isRapidFireRunning || lockedRapidFireAnswer !== null) return;
+                      setLockedRapidFireAnswer(opt);
+                      submitAnswer(opt);
+                    }}
+                    className={cn(
+                      "text-lg py-4 relative overflow-hidden",
+                      lockedRapidFireAnswer === opt &&
+                        "bg-pink-500/20 border-pink-400 text-pink-100 shadow-[0_0_25px_rgba(236,72,153,0.9)]"
+                    )}
+                    disabled={
+                      !state.isRapidFireRunning ||
+                      (lockedRapidFireAnswer !== null && lockedRapidFireAnswer !== opt)
+                    }
                   >
-                    {opt}
+                    <span className="relative z-10">{opt}</span>
+                    {lockedRapidFireAnswer === opt && (
+                      <span className="absolute inset-0 bg-gradient-to-r from-pink-500/20 via-yellow-300/10 to-pink-500/20 opacity-80 pointer-events-none" />
+                    )}
                   </Button>
                 ))}
               </div>
