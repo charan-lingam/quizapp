@@ -32,6 +32,9 @@ interface Team {
   name: string;
   score: number;
   socketId: string;
+  round1Score: number;
+  round2Score: number;
+  round3Score: number;
 }
 
 interface Question {
@@ -461,12 +464,12 @@ const AdminPanel = ({
               type="password" 
               value={adminPassword}
               onChange={(e) => setAdminPassword(e.target.value)}
-              placeholder="Enter password (hint: admin)"
+              placeholder="Enter password"
               className="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rose-400"
             />
             <Button 
               onClick={() => {
-                if (adminPassword === "admin") setIsAdminAuthenticated(true);
+                if (adminPassword === "eceevt") setIsAdminAuthenticated(true);
                 else alert("Wrong password");
               }} 
               className="w-full" 
@@ -575,7 +578,14 @@ const AdminPanel = ({
                         {state.activeTeamId === team.id && <span className="ml-2 text-[10px] bg-cyan-400 text-black px-1 rounded">ACTIVE</span>}
                         {state.buzzerWinner === team.id && <span className="ml-2 text-[10px] bg-rose-500 text-white px-1 rounded">BUZZED</span>}
                       </td>
-                      <td className="py-4 text-2xl font-mono text-cyan-400">{team.score}</td>
+                      <td className="py-4">
+                        <div className="text-2xl font-mono text-cyan-400">{team.score}</div>
+                        <div className="mt-1 flex flex-wrap gap-1 text-[10px] font-mono text-slate-400">
+                          <span className="px-2 py-0.5 rounded-full bg-slate-800/80">R1: {team.round1Score ?? 0}</span>
+                          <span className="px-2 py-0.5 rounded-full bg-slate-800/80">R2: {team.round2Score ?? 0}</span>
+                          <span className="px-2 py-0.5 rounded-full bg-slate-800/80">R3: {team.round3Score ?? 0}</span>
+                        </div>
+                      </td>
                       <td className="py-4">
                         <div className="flex gap-2">
                           {state.currentRound > 0 && (
@@ -647,9 +657,9 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-12">
-        {/* Question Display */}
-        <div className="lg:col-span-3 flex flex-col justify-center">
+      <div className="flex-1 flex flex-col gap-12">
+        {/* Question & Round Visuals */}
+        <div className="flex flex-col items-center">
           {state.currentRound === 0 ? (
             <div className="text-center space-y-8">
               <h2 className="text-8xl font-black text-white">GET READY!</h2>
@@ -786,8 +796,8 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
           )}
         </div>
 
-        {/* Leaderboard Sidebar */}
-        <div className="lg:col-span-1 space-y-6">
+        {/* Leaderboard below question */}
+        <div className="space-y-6">
           <h3 className="text-2xl font-black flex items-center gap-2 text-slate-400">
             <Trophy className="text-yellow-400" /> LEADERBOARD
           </h3>
@@ -807,7 +817,14 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
                     <span className={cn("w-8 h-8 rounded-full flex items-center justify-center font-bold", idx === 0 ? "bg-yellow-400 text-black" : "bg-slate-800 text-slate-400")}>
                       {idx + 1}
                     </span>
-                    <span className="text-xl font-bold">{team.name}</span>
+                    <div className="flex flex-col">
+                      <span className="text-xl font-bold">{team.name}</span>
+                      <div className="mt-1 flex flex-wrap gap-1 text-[10px] font-mono text-slate-400">
+                        <span className="px-2 py-0.5 rounded-full bg-slate-800/80">R1: {team.round1Score ?? 0}</span>
+                        <span className="px-2 py-0.5 rounded-full bg-slate-800/80">R2: {team.round2Score ?? 0}</span>
+                        <span className="px-2 py-0.5 rounded-full bg-slate-800/80">R3: {team.round3Score ?? 0}</span>
+                      </div>
+                    </div>
                   </div>
                   <span className="text-3xl font-mono font-black text-cyan-400">{team.score}</span>
                 </motion.div>

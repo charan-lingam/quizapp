@@ -29,6 +29,9 @@ interface Team {
   name: string;
   score: number;
   socketId: string;
+  round1Score: number;
+  round2Score: number;
+  round3Score: number;
 }
 
 interface Question {
@@ -147,6 +150,9 @@ async function startServer() {
           name,
           score: 0,
           socketId: socket.id,
+          round1Score: 0,
+          round2Score: 0,
+          round3Score: 0,
         };
       }
       socket.emit("teamRegistered", state.teams[teamId]);
@@ -193,7 +199,21 @@ async function startServer() {
 
         case "ADJUST_SCORE":
           if (state.teams[payload.teamId]) {
-            state.teams[payload.teamId].score = Math.max(0, state.teams[payload.teamId].score + payload.amount);
+            const team = state.teams[payload.teamId];
+            const newTotal = Math.max(0, team.score + payload.amount);
+            const delta = newTotal - team.score;
+            team.score = newTotal;
+
+            // Attribute manual adjustments to the current round, if any
+            if (delta !== 0) {
+              if (state.currentRound === 1) {
+                team.round1Score = Math.max(0, team.round1Score + delta);
+              } else if (state.currentRound === 2) {
+                team.round2Score = Math.max(0, team.round2Score + delta);
+              } else if (state.currentRound === 3) {
+                team.round3Score = Math.max(0, team.round3Score + delta);
+              }
+            }
           }
           break;
 
@@ -294,7 +314,17 @@ async function startServer() {
 
       if (isAllowed && answer === currentQuestion.answer) {
         const points = state.currentRound === 1 ? 1 : state.currentRound === 2 ? 1.5 : 2;
-        state.teams[teamId].score += points;
+        const team = state.teams[teamId];
+        team.score += points;
+
+        // Attribute points to the appropriate round bucket
+        if (state.currentRound === 1) {
+          team.round1Score += points;
+        } else if (state.currentRound === 2) {
+          team.round2Score += points;
+        } else if (state.currentRound === 3) {
+          team.round3Score += points;
+        }
         
         // Mark that this team has already scored for this Rapid Fire question
         if (state.currentRound === 3) {
