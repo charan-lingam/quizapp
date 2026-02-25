@@ -90,6 +90,8 @@ const state: QuizState = {
   },
 };
 
+let buzzerLockTimeout: NodeJS.Timeout | null = null;
+
 async function startServer() {
   const app = express();
   const httpServer = createServer(app);
@@ -154,6 +156,10 @@ async function startServer() {
 
       switch (type) {
         case "START_ROUND":
+          if (buzzerLockTimeout) {
+            clearTimeout(buzzerLockTimeout);
+            buzzerLockTimeout = null;
+          }
           state.currentRound = payload.round;
           state.currentQuestionIndex = 0;
           state.buzzerLocked = false;
@@ -175,11 +181,15 @@ async function startServer() {
           break;
 
         case "NEXT_QUESTION":
+          if (buzzerLockTimeout) {
+            clearTimeout(buzzerLockTimeout);
+            buzzerLockTimeout = null;
+          }
           state.currentQuestionIndex++;
           state.buzzerLocked = false;
           state.buzzerWinner = null;
           state.buzzerReactionTime = null;
-           state.buzzerBuzzes = [];
+          state.buzzerBuzzes = [];
           state.questionStartTime = Date.now();
           break;
 
@@ -190,6 +200,10 @@ async function startServer() {
           break;
 
         case "RESET_BUZZER":
+          if (buzzerLockTimeout) {
+            clearTimeout(buzzerLockTimeout);
+            buzzerLockTimeout = null;
+          }
           state.buzzerLocked = false;
           state.buzzerWinner = null;
           state.buzzerReactionTime = null;
@@ -209,6 +223,10 @@ async function startServer() {
           break;
           
         case "RESET_QUIZ":
+            if (buzzerLockTimeout) {
+              clearTimeout(buzzerLockTimeout);
+              buzzerLockTimeout = null;
+            }
             state.currentRound = 0;
             state.currentQuestionIndex = 0;
             state.teams = {};
@@ -220,17 +238,38 @@ async function startServer() {
 
     socket.on("buzz", (teamId: string) => {
       if (state.currentRound !== 2) return;
+      if (state.buzzerLocked) return;
 
       const reactionTime = state.questionStartTime ? Date.now() - state.questionStartTime : 0;
+
+      // Ignore duplicate buzzes from the same team for this question
+      if (state.buzzerBuzzes.some((b) => b.teamId === teamId)) {
+        return;
+      }
 
       // Track every team’s reaction time for transparency
       state.buzzerBuzzes.push({ teamId, reactionTime });
 
-      if (!state.buzzerLocked) {
-        state.buzzerLocked = true;
-        state.buzzerWinner = teamId;
-        state.buzzerReactionTime = reactionTime;
-        io.emit("buzzerEffect", { teamId, reactionTime });
+      // Start a 2.5s window from the first buzz before locking
+      if (!buzzerLockTimeout) {
+        buzzerLockTimeout = setTimeout(() => {
+          buzzerLockTimeout = null;
+          if (state.buzzerBuzzes.length === 0 || state.buzzerLocked || state.currentRound !== 2) {
+            return;
+          }
+
+          const sorted = state.buzzerBuzzes
+            .slice()
+            .sort((a, b) => a.reactionTime - b.reactionTime);
+          const winner = sorted[0];
+
+          state.buzzerLocked = true;
+          state.buzzerWinner = winner.teamId;
+          state.buzzerReactionTime = winner.reactionTime;
+
+          io.emit("buzzerEffect", { teamId: winner.teamId, reactionTime: winner.reactionTime });
+          io.emit("stateUpdate", state);
+        }, 2500);
       }
 
       io.emit("stateUpdate", state);
