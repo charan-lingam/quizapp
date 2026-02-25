@@ -32,6 +32,11 @@ interface Team {
   name: string;
   score: number;
   socketId: string;
+  roundScores?: {
+    1: number;
+    2: number;
+    3: number;
+  };
 }
 
 interface Question {
@@ -660,9 +665,9 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-12">
+      <div className="flex-1 flex flex-col gap-12">
         {/* Question Display */}
-        <div className="lg:col-span-3 flex flex-col justify-center">
+        <div className="flex flex-col justify-center">
           {state.currentRound === 0 ? (
             <div className="text-center space-y-8">
               <h2 className="text-8xl font-black text-white">GET READY!</h2>
@@ -815,8 +820,8 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
           )}
         </div>
 
-        {/* Leaderboard Sidebar */}
-        <div className="lg:col-span-1 space-y-6">
+        {/* Leaderboard under question */}
+        <div className="space-y-6 max-w-5xl mx-auto w-full">
           <h3 className="text-2xl font-black flex items-center gap-2 text-slate-400">
             <Trophy className="text-yellow-400" /> LEADERBOARD
           </h3>
@@ -828,17 +833,39 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
                   layout
                   key={team.id}
                   className={cn(
-                    "p-4 rounded-2xl flex justify-between items-center border transition-all",
-                    idx === 0 ? "bg-yellow-400/10 border-yellow-400/50" : "bg-slate-900 border-white/5"
+                    "p-4 rounded-2xl border transition-all bg-slate-900/80",
+                    idx === 0 ? "bg-yellow-400/10 border-yellow-400/50" : "border-white/5"
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className={cn("w-8 h-8 rounded-full flex items-center justify-center font-bold", idx === 0 ? "bg-yellow-400 text-black" : "bg-slate-800 text-slate-400")}>
-                      {idx + 1}
-                    </span>
-                    <span className="text-xl font-bold">{team.name}</span>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span className={cn("w-8 h-8 rounded-full flex items-center justify-center font-bold", idx === 0 ? "bg-yellow-400 text-black" : "bg-slate-800 text-slate-400")}>
+                        {idx + 1}
+                      </span>
+                      <span className="text-xl font-bold">{team.name}</span>
+                    </div>
+                    <span className="text-3xl font-mono font-black text-cyan-400">{team.score}</span>
                   </div>
-                  <span className="text-3xl font-mono font-black text-cyan-400">{team.score}</span>
+                  <div className="mt-2 text-xs sm:text-sm text-slate-400 font-mono flex flex-wrap gap-4 justify-between">
+                    <span>
+                      R1:{" "}
+                      <span className="text-cyan-300">
+                        {team.roundScores?.[1] ?? 0}
+                      </span>
+                    </span>
+                    <span>
+                      R2:{" "}
+                      <span className="text-cyan-300">
+                        {team.roundScores?.[2] ?? 0}
+                      </span>
+                    </span>
+                    <span>
+                      R3:{" "}
+                      <span className="text-cyan-300">
+                        {team.roundScores?.[3] ?? 0}
+                      </span>
+                    </span>
+                  </div>
                 </motion.div>
               ))}
           </div>

@@ -29,6 +29,11 @@ interface Team {
   name: string;
   score: number;
   socketId: string;
+  roundScores: {
+    1: number;
+    2: number;
+    3: number;
+  };
 }
 
 interface Question {
@@ -143,6 +148,11 @@ async function startServer() {
           name,
           score: 0,
           socketId: socket.id,
+          roundScores: {
+            1: 0,
+            2: 0,
+            3: 0,
+          },
         };
       }
       socket.emit("teamRegistered", state.teams[teamId]);
@@ -195,7 +205,17 @@ async function startServer() {
 
         case "ADJUST_SCORE":
           if (state.teams[payload.teamId]) {
-            state.teams[payload.teamId].score = Math.max(0, state.teams[payload.teamId].score + payload.amount);
+            const team = state.teams[payload.teamId];
+            const newTotal = Math.max(0, team.score + payload.amount);
+            const round = state.currentRound;
+
+            team.score = newTotal;
+
+            if (round === 1 || round === 2 || round === 3) {
+              const key = round as 1 | 2 | 3;
+              const currentRoundScore = team.roundScores?.[key] ?? 0;
+              team.roundScores[key] = Math.max(0, currentRoundScore + payload.amount);
+            }
           }
           break;
 
@@ -295,7 +315,15 @@ async function startServer() {
 
       if (isAllowed && answer === currentQuestion.answer) {
         const points = state.currentRound === 1 ? 1 : state.currentRound === 2 ? 1.5 : 2;
-        state.teams[teamId].score += points;
+        const team = state.teams[teamId];
+        if (team) {
+          team.score += points;
+
+          if (state.currentRound === 1 || state.currentRound === 2 || state.currentRound === 3) {
+            const key = state.currentRound as 1 | 2 | 3;
+            team.roundScores[key] = (team.roundScores?.[key] ?? 0) + points;
+          }
+        }
         
         // Auto-advance for Pass and Buzzer rounds only.
         // In Rapid Fire we keep the same question alive for the whole timer
