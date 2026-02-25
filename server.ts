@@ -38,6 +38,11 @@ interface Question {
   answer: string;
 }
 
+interface BuzzerBuzz {
+  teamId: string;
+  reactionTime: number;
+}
+
 interface QuizState {
   teams: Record<string, Team>;
   currentRound: number; // 0: Lobby, 1: Pass, 2: Buzzer, 3: Rapid Fire
@@ -46,6 +51,7 @@ interface QuizState {
   buzzerLocked: boolean;
   buzzerWinner: string | null;
   buzzerReactionTime: number | null;
+  buzzerBuzzes: BuzzerBuzz[];
   questionStartTime: number | null;
   rapidFireTimer: number;
   isRapidFireRunning: boolean;
@@ -72,8 +78,9 @@ const state: QuizState = {
   buzzerLocked: false,
   buzzerWinner: null,
   buzzerReactionTime: null,
+  buzzerBuzzes: [],
   questionStartTime: null,
-  rapidFireTimer: 5,
+  rapidFireTimer: 8,
   isRapidFireRunning: false,
   localIp: "Detecting...",
   questions: {
@@ -92,6 +99,8 @@ async function startServer() {
     },
   });
 
+  const disableHmr = process.env.DISABLE_HMR === "true";
+
   app.get("/api/network", (_req, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.json({ port: PORT, ips: getLanIPv4s() });
@@ -100,7 +109,15 @@ async function startServer() {
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        host: true,
+        allowedHosts: true,
+        // When serving to multiple phones on a LAN, the extra HMR websocket port
+        // (often 24678) is frequently blocked by firewalls. Disabling HMR keeps
+        // everything on port 3000 so many devices can load reliably.
+        hmr: disableHmr ? false : true,
+      },
       appType: "spa",
     });
     app.use(vite.middlewares);
@@ -142,10 +159,18 @@ async function startServer() {
           state.buzzerLocked = false;
           state.buzzerWinner = null;
           state.buzzerReactionTime = null;
+          state.buzzerBuzzes = [];
+          state.questionStartTime = null;
           state.isRapidFireRunning = false;
+
           if (state.currentRound === 1) {
             const teamIds = Object.keys(state.teams);
             state.activeTeamId = teamIds.length > 0 ? teamIds[0] : null;
+          } else if (state.currentRound === 2) {
+            // Start timing for the first buzzer question
+            state.questionStartTime = Date.now();
+          } else if (state.currentRound === 3) {
+            state.rapidFireTimer = 8;
           }
           break;
 
@@ -154,6 +179,7 @@ async function startServer() {
           state.buzzerLocked = false;
           state.buzzerWinner = null;
           state.buzzerReactionTime = null;
+           state.buzzerBuzzes = [];
           state.questionStartTime = Date.now();
           break;
 
@@ -167,6 +193,7 @@ async function startServer() {
           state.buzzerLocked = false;
           state.buzzerWinner = null;
           state.buzzerReactionTime = null;
+          state.buzzerBuzzes = [];
           state.questionStartTime = Date.now();
           break;
 
@@ -192,13 +219,21 @@ async function startServer() {
     });
 
     socket.on("buzz", (teamId: string) => {
-      if (state.currentRound === 2 && !state.buzzerLocked) {
+      if (state.currentRound !== 2) return;
+
+      const reactionTime = state.questionStartTime ? Date.now() - state.questionStartTime : 0;
+
+      // Track every team’s reaction time for transparency
+      state.buzzerBuzzes.push({ teamId, reactionTime });
+
+      if (!state.buzzerLocked) {
         state.buzzerLocked = true;
         state.buzzerWinner = teamId;
-        state.buzzerReactionTime = state.questionStartTime ? Date.now() - state.questionStartTime : 0;
-        io.emit("stateUpdate", state);
-        io.emit("buzzerEffect", { teamId, reactionTime: state.buzzerReactionTime });
+        state.buzzerReactionTime = reactionTime;
+        io.emit("buzzerEffect", { teamId, reactionTime });
       }
+
+      io.emit("stateUpdate", state);
     });
 
     socket.on("submitAnswer", ({ teamId, answer }: { teamId: string, answer: string }) => {
@@ -223,13 +258,17 @@ async function startServer() {
         const points = state.currentRound === 1 ? 1 : state.currentRound === 2 ? 1.5 : 2;
         state.teams[teamId].score += points;
         
-        // Auto-advance for ALL rounds after correct answer
-        state.currentQuestionIndex++;
-        state.buzzerLocked = false;
-        state.buzzerWinner = null;
-        state.buzzerReactionTime = null;
-        state.questionStartTime = Date.now();
-        state.rapidFireTimer = 5; // Reset timer for Round 3
+        // Auto-advance for Pass and Buzzer rounds only.
+        // In Rapid Fire we keep the same question alive for the whole timer
+        // so multiple teams can score on the same question.
+        if (state.currentRound === 1 || state.currentRound === 2) {
+          state.currentQuestionIndex++;
+          state.buzzerLocked = false;
+          state.buzzerWinner = null;
+          state.buzzerReactionTime = null;
+          state.buzzerBuzzes = [];
+          state.questionStartTime = Date.now();
+        }
         
         if (state.currentRound === 1) {
           // Pass control to next team automatically in Pass round
@@ -267,7 +306,7 @@ async function startServer() {
       state.rapidFireTimer -= 1;
       if (state.rapidFireTimer <= 0) {
         state.currentQuestionIndex++;
-        state.rapidFireTimer = 5;
+        state.rapidFireTimer = 8;
         
         // Check if we ran out of questions
         if (state.currentQuestionIndex >= state.questions.rapidFireRound.length) {

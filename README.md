@@ -30,6 +30,14 @@ A high-energy, real-time quiz application built with React, Express, and Socket.
    - **Laptop:** `http://localhost:3000`
    - **Mobile:** open the **“Open this on mobile”** URL shown on the laptop (same Wi‑Fi), e.g. `http://<your-laptop-ip>:3000`
 
+### If multiple mobiles can’t load (recommended LAN mode)
+
+Run in LAN mode (disables Vite HMR so phones only need port `3000`):
+
+```bash
+npm run lan
+```
+
 ### If the phone can’t connect
 
 - **Windows Firewall**: allow inbound TCP on port `3000` (Node.js).

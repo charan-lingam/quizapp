@@ -49,6 +49,7 @@ interface QuizState {
   buzzerLocked: boolean;
   buzzerWinner: string | null;
   buzzerReactionTime: number | null;
+  buzzerBuzzes: { teamId: string; reactionTime: number }[];
   questionStartTime: number | null;
   rapidFireTimer: number;
   isRapidFireRunning: boolean;
@@ -683,7 +684,7 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
                       <div className="h-4 bg-slate-800 rounded-full overflow-hidden border border-white/10">
                         <motion.div 
                           initial={false}
-                          animate={{ width: `${(state.rapidFireTimer / 5) * 100}%` }}
+                          animate={{ width: `${(state.rapidFireTimer / 8) * 100}%` }}
                           className={cn(
                             "h-full transition-colors",
                             state.rapidFireTimer <= 2 ? "bg-rose-500 shadow-[0_0_20px_#f43f5e]" : "bg-cyan-400 shadow-[0_0_20px_#22d3ee]"
@@ -716,12 +717,45 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
                 )}
 
                 {state.currentRound === 2 && state.buzzerLocked && (
-                  <div className="flex flex-col items-center gap-6">
+                  <div className="flex flex-col items-center gap-8 w-full">
                     <div className="text-2xl text-rose-500 font-black uppercase tracking-widest animate-pulse">BUZZER HIT!</div>
                     <div className="px-12 py-6 bg-rose-600 text-white text-5xl font-black rounded-3xl shadow-[0_0_40px_rgba(225,29,72,0.6)] flex flex-col items-center">
                       {state.teams[state.buzzerWinner!]?.name}
                       <span className="text-xl font-mono opacity-80 mt-2">{state.buzzerReactionTime}ms</span>
                     </div>
+
+                    {/* Transparency: show all buzz times */}
+                    {state.buzzerBuzzes.length > 0 && (
+                      <div className="w-full max-w-xl mx-auto">
+                        <h4 className="text-sm text-slate-400 font-bold uppercase tracking-widest mb-2 text-center">
+                          Buzzer Order (Reaction Times)
+                        </h4>
+                        <div className="bg-slate-900/70 border border-white/10 rounded-2xl divide-y divide-white/10">
+                          {state.buzzerBuzzes
+                            .slice()
+                            .sort((a, b) => a.reactionTime - b.reactionTime)
+                            .map((buzz, index) => (
+                              <div
+                                key={`${buzz.teamId}-${index}`}
+                                className="flex justify-between items-center px-4 py-2 text-sm"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className={cn(
+                                    "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                                    index === 0 ? "bg-yellow-400 text-black" : "bg-slate-800 text-slate-300"
+                                  )}>
+                                    {index + 1}
+                                  </span>
+                                  <span className="font-semibold text-slate-100">
+                                    {state.teams[buzz.teamId]?.name ?? buzz.teamId}
+                                  </span>
+                                </div>
+                                <span className="font-mono text-cyan-400">{buzz.reactionTime} ms</span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </motion.div>
