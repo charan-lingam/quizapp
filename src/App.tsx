@@ -113,11 +113,15 @@ const Card = ({ children, className, onClick }: { children: React.ReactNode; cla
 // --- Sub-Components ---
 
 const RoleSelect = ({ setView, state, lanUrls }: { setView: (v: any) => void; state: QuizState; lanUrls: string[] }) => (
-  <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 gap-8">
+  <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 pt-20 md:pt-24 gap-8">
     {/* Institutional Headers */}
-    <div className="absolute top-8 left-0 w-full flex justify-between items-center px-12">
-      <div className="text-2xl font-black text-white tracking-widest border-l-4 border-cyan-400 pl-3">NRIIT</div>
-      <div className="text-2xl font-black text-cyan-400 tracking-widest border-r-4 border-white pr-3">ECE/EVT</div>
+    <div className="w-full max-w-4xl mx-auto flex flex-col items-center gap-1 sm:flex-row sm:justify-between sm:items-center px-4 sm:px-6">
+      <div className="text-xl sm:text-2xl font-black text-white tracking-widest border-l-4 border-cyan-400 pl-3">
+        NRIIT
+      </div>
+      <div className="text-xl sm:text-2xl font-black text-cyan-400 tracking-widest border-r-4 border-white pr-3">
+        ECE/EVT
+      </div>
     </div>
 
     <motion.div 
@@ -459,12 +463,12 @@ const AdminPanel = ({
               type="password" 
               value={adminPassword}
               onChange={(e) => setAdminPassword(e.target.value)}
-              placeholder="Enter password (hint: admin)"
+              placeholder="Enter admin password"
               className="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rose-400"
             />
             <Button 
               onClick={() => {
-                if (adminPassword === "admin") setIsAdminAuthenticated(true);
+                if (adminPassword === "eceevt") setIsAdminAuthenticated(true);
                 else alert("Wrong password");
               }} 
               className="w-full" 
