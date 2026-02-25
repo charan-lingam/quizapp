@@ -615,6 +615,17 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
     state.currentRound === 3 ? state.questions.rapidFireRound : [];
   
   const currentQuestion = currentQuestionSet[state.currentQuestionIndex];
+  const [showBuzzerOrder, setShowBuzzerOrder] = useState(false);
+
+  useEffect(() => {
+    // When first buzzer hits in Round 2, show order list for 2 seconds
+    if (state.currentRound === 2 && state.buzzerLocked && state.buzzerWinner) {
+      setShowBuzzerOrder(true);
+      const timer = setTimeout(() => setShowBuzzerOrder(false), 2000);
+      return () => clearTimeout(timer);
+    }
+    setShowBuzzerOrder(false);
+  }, [state.currentRound, state.buzzerLocked, state.buzzerWinner]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-8 flex flex-col">
@@ -739,41 +750,57 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
 
                 {state.currentRound === 2 && state.buzzerLocked && (
                   <div className="flex flex-col items-center gap-8 w-full">
-                    <div className="text-2xl text-rose-500 font-black uppercase tracking-widest animate-pulse">BUZZER HIT!</div>
+                    <div className="text-2xl text-rose-500 font-black uppercase tracking-widest animate-pulse">
+                      BUZZER HIT!
+                    </div>
                     <div className="px-12 py-6 bg-rose-600 text-white text-5xl font-black rounded-3xl shadow-[0_0_40px_rgba(225,29,72,0.6)] flex flex-col items-center">
                       {state.teams[state.buzzerWinner!]?.name}
-                      <span className="text-xl font-mono opacity-80 mt-2">{state.buzzerReactionTime}ms</span>
+                      <span className="text-xl font-mono opacity-80 mt-2">
+                        {state.buzzerReactionTime}ms
+                      </span>
                     </div>
 
-                    {/* Transparency: show all buzz times */}
+                    {/* Transparency: show all buzz times from first hit */}
                     {state.buzzerBuzzes.length > 0 && (
                       <div className="w-full max-w-xl mx-auto">
                         <h4 className="text-sm text-slate-400 font-bold uppercase tracking-widest mb-2 text-center">
-                          Buzzer Order (Reaction Times)
+                          Buzzer Order (Time from First Hit)
                         </h4>
                         <div className="bg-slate-900/70 border border-white/10 rounded-2xl divide-y divide-white/10">
-                          {state.buzzerBuzzes
-                            .slice()
-                            .sort((a, b) => a.reactionTime - b.reactionTime)
-                            .map((buzz, index) => (
-                              <div
-                                key={`${buzz.teamId}-${index}`}
-                                className="flex justify-between items-center px-4 py-2 text-sm"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <span className={cn(
-                                    "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
-                                    index === 0 ? "bg-yellow-400 text-black" : "bg-slate-800 text-slate-300"
-                                  )}>
-                                    {index + 1}
-                                  </span>
-                                  <span className="font-semibold text-slate-100">
-                                    {state.teams[buzz.teamId]?.name ?? buzz.teamId}
+                          {(() => {
+                            const sorted = state.buzzerBuzzes
+                              .slice()
+                              .sort((a, b) => a.reactionTime - b.reactionTime);
+                            const base = sorted[0]?.reactionTime ?? 0;
+                            return sorted.map((buzz, index) => {
+                              const delta = buzz.reactionTime - base;
+                              return (
+                                <div
+                                  key={`${buzz.teamId}-${index}`}
+                                  className="flex justify-between items-center px-4 py-2 text-sm"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <span
+                                      className={cn(
+                                        "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                                        index === 0
+                                          ? "bg-yellow-400 text-black"
+                                          : "bg-slate-800 text-slate-300"
+                                      )}
+                                    >
+                                      {index + 1}
+                                    </span>
+                                    <span className="font-semibold text-slate-100">
+                                      {state.teams[buzz.teamId]?.name ?? buzz.teamId}
+                                    </span>
+                                  </div>
+                                  <span className="font-mono text-cyan-400">
+                                    {index === 0 ? "0 ms" : `+${delta} ms`}
                                   </span>
                                 </div>
-                                <span className="font-mono text-cyan-400">{buzz.reactionTime} ms</span>
-                              </div>
-                            ))}
+                              );
+                            });
+                          })()}
                         </div>
                       </div>
                     )}
