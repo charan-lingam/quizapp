@@ -769,20 +769,18 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
                       </span>
                     </div>
 
-                    {/* Transparency: show all buzz times from first hit */}
+                    {/* Transparency: show all buzz times with absolute reaction times */}
                     {state.buzzerBuzzes.length > 0 && (
                       <div className="w-full max-w-xl mx-auto">
                         <h4 className="text-sm text-slate-400 font-bold uppercase tracking-widest mb-2 text-center">
-                          Buzzer Order (Time from First Hit)
+                          Buzzer Order (Reaction Times)
                         </h4>
                         <div className="bg-slate-900/70 border border-white/10 rounded-2xl divide-y divide-white/10">
                           {(() => {
                             const sorted = state.buzzerBuzzes
                               .slice()
                               .sort((a, b) => a.reactionTime - b.reactionTime);
-                            const base = sorted[0]?.reactionTime ?? 0;
                             return sorted.map((buzz, index) => {
-                              const delta = buzz.reactionTime - base;
                               return (
                                 <div
                                   key={`${buzz.teamId}-${index}`}
@@ -804,7 +802,7 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
                                     </span>
                                   </div>
                                   <span className="font-mono text-cyan-400">
-                                    {index === 0 ? "0 ms" : `+${delta} ms`}
+                                    {buzz.reactionTime} ms
                                   </span>
                                 </div>
                               );
