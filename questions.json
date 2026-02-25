@@ -1,28 +1,368 @@
 {
   "passRound": [
-    { "id": "p1", "question": "What is the capital of France?", "options": ["London", "Berlin", "Paris", "Madrid"], "answer": "Paris" },
-    { "id": "p2", "question": "Which planet is known as the Red Planet?", "options": ["Venus", "Mars", "Jupiter", "Saturn"], "answer": "Mars" },
-    { "id": "p3", "question": "What is the largest ocean on Earth?", "options": ["Atlantic", "Indian", "Arctic", "Pacific"], "answer": "Pacific" },
-    { "id": "p4", "question": "Who wrote 'Romeo and Juliet'?", "options": ["Dickens", "Shakespeare", "Austen", "Hemingway"], "answer": "Shakespeare" },
-    { "id": "p5", "question": "What is the chemical symbol for gold?", "options": ["Ag", "Fe", "Au", "Pb"], "answer": "Au" }
+    {
+      "id": "p1",
+      "question": "The unit of resistance is:",
+      "options": ["Volt", "Ampere", "Ohm", "Watt"],
+      "answer": "Ohm"
+    },
+    {
+      "id": "p2",
+      "question": "Ohm’s Law is:",
+      "options": ["V = IR", "I = VR", "R = VI", "P = VI"],
+      "answer": "V = IR"
+    },
+    {
+      "id": "p3",
+      "question": "A diode allows current to flow in:",
+      "options": ["Both directions", "Forward direction only", "Reverse direction only", "No direction"],
+      "answer": "Forward direction only"
+    },
+    {
+      "id": "p4",
+      "question": "Binary number system uses base:",
+      "options": ["10", "8", "2", "16"],
+      "answer": "2"
+    },
+    {
+      "id": "p5",
+      "question": "1 byte equals:",
+      "options": ["4 bits", "8 bits", "16 bits", "2 bits"],
+      "answer": "8 bits"
+    },
+    {
+      "id": "p6",
+      "question": "AND gate output is 1 when:",
+      "options": ["Any input is 1", "All inputs are 1", "All inputs are 0", "Any input is 0"],
+      "answer": "All inputs are 1"
+    },
+    {
+      "id": "p7",
+      "question": "NOT gate is also called:",
+      "options": ["Buffer", "Inverter", "OR gate", "NOR gate"],
+      "answer": "Inverter"
+    },
+    {
+      "id": "p8",
+      "question": "The unit of frequency is:",
+      "options": ["Volt", "Hertz", "Ohm", "Coulomb"],
+      "answer": "Hertz"
+    },
+    {
+      "id": "p9",
+      "question": "A capacitor stores:",
+      "options": ["Current", "Voltage", "Charge", "Resistance"],
+      "answer": "Charge"
+    },
+    {
+      "id": "p10",
+      "question": "Flip-flop stores:",
+      "options": ["8 bits", "4 bits", "1 bit", "2 bits"],
+      "answer": "1 bit"
+    },
+    {
+      "id": "p11",
+      "question": "The output of XOR gate is 1 when:",
+      "options": ["Inputs are same", "Inputs are different", "Both inputs are 0", "Both inputs are 1"],
+      "answer": "Inputs are different"
+    },
+    {
+      "id": "p12",
+      "question": "Full Adder has how many inputs?",
+      "options": ["2", "3", "4", "1"],
+      "answer": "3"
+    },
+    {
+      "id": "p13",
+      "question": "A transistor works as:",
+      "options": ["Amplifier", "Switch", "Both A and B", "Rectifier"],
+      "answer": "Both A and B"
+    },
+    {
+      "id": "p14",
+      "question": "The depletion region is formed in:",
+      "options": ["Resistor", "Capacitor", "PN junction diode", "Inductor"],
+      "answer": "PN junction diode"
+    },
+    {
+      "id": "p15",
+      "question": "2:1 Multiplexer has how many select lines?",
+      "options": ["2", "1", "3", "4"],
+      "answer": "1"
+    },
+    {
+      "id": "p16",
+      "question": "Even parity means:",
+      "options": ["Odd number of 1s", "Even number of 1s", "All zeros", "All ones"],
+      "answer": "Even number of 1s"
+    },
+    {
+      "id": "p17",
+      "question": "The gain of an amplifier is:",
+      "options": ["Output/Input", "Input/Output", "V × I", "I/R"],
+      "answer": "Output/Input"
+    },
+    {
+      "id": "p18",
+      "question": "In a half adder, Sum =",
+      "options": ["A + B", "A ⊕ B", "AB", "A'B"],
+      "answer": "A ⊕ B"
+    },
+    {
+      "id": "p19",
+      "question": "CMOS technology uses:",
+      "options": ["Only NMOS", "Only PMOS", "Both NMOS and PMOS", "BJT"],
+      "answer": "Both NMOS and PMOS"
+    },
+    {
+      "id": "p20",
+      "question": "Propagation delay affects:",
+      "options": ["Voltage", "Power only", "Speed of circuit", "Resistance"],
+      "answer": "Speed of circuit"
+    }
   ],
   "buzzerRound": [
-    { "id": "b1", "question": "Which element has the atomic number 1?", "options": ["Helium", "Oxygen", "Hydrogen", "Carbon"], "answer": "Hydrogen" },
-    { "id": "b2", "question": "What is the square root of 144?", "options": ["10", "12", "14", "16"], "answer": "12" },
-    { "id": "b3", "question": "In which year did the Titanic sink?", "options": ["1905", "1912", "1920", "1931"], "answer": "1912" },
-    { "id": "b4", "question": "Who painted the Mona Lisa?", "options": ["Van Gogh", "Picasso", "Da Vinci", "Monet"], "answer": "Da Vinci" },
-    { "id": "b5", "question": "What is the currency of Japan?", "options": ["Yuan", "Won", "Yen", "Baht"], "answer": "Yen" }
+    {
+      "id": "b1",
+      "question": "Communication system mainly consists of:",
+      "options": ["Transmitter only", "Receiver only", "Transmitter, Channel, Receiver", "Amplifier only"],
+      "answer": "Transmitter, Channel, Receiver"
+    },
+    {
+      "id": "b2",
+      "question": "The device that converts message signal into suitable form for transmission is:",
+      "options": ["Receiver", "Transmitter", "Antenna", "Filter"],
+      "answer": "Transmitter"
+    },
+    {
+      "id": "b3",
+      "question": "AM stands for:",
+      "options": ["Angle Modulation", "Amplitude Modulation", "Analog Modulation", "Active Modulation"],
+      "answer": "Amplitude Modulation"
+    },
+    {
+      "id": "b4",
+      "question": "The basic function of modulation is to:",
+      "options": ["Increase noise", "Reduce bandwidth", "Enable long-distance transmission", "Reduce signal strength"],
+      "answer": "Enable long-distance transmission"
+    },
+    {
+      "id": "b5",
+      "question": "Noise mainly affects:",
+      "options": ["Power", "Signal quality", "Frequency only", "Antenna height"],
+      "answer": "Signal quality"
+    },
+    {
+      "id": "b6",
+      "question": "Control system is a system that:",
+      "options": ["Increases voltage", "Controls output automatically", "Amplifies signals", "Stores data"],
+      "answer": "Controls output automatically"
+    },
+    {
+      "id": "b7",
+      "question": "Example of open-loop control system:",
+      "options": ["Air conditioner", "Washing machine (timer based)", "Automatic voltage regulator", "Speed governor"],
+      "answer": "Washing machine (timer based)"
+    },
+    {
+      "id": "b8",
+      "question": "In FM, the carrier frequency varies according to:",
+      "options": ["Amplitude", "Phase", "Message signal", "Power"],
+      "answer": "Message signal"
+    },
+    {
+      "id": "b9",
+      "question": "Bandwidth of AM signal is:",
+      "options": ["fm", "2fm", "fc", "2fc"],
+      "answer": "2fm"
+    },
+    {
+      "id": "b10",
+      "question": "The feedback in a control system is used to:",
+      "options": ["Increase error", "Reduce error", "Increase instability", "Stop system"],
+      "answer": "Reduce error"
+    },
+    {
+      "id": "b11",
+      "question": "Closed-loop system has:",
+      "options": ["No feedback", "Negative feedback", "Positive feedback only", "No output"],
+      "answer": "Negative feedback"
+    },
+    {
+      "id": "b12",
+      "question": "Laplace transform is used in control systems to:",
+      "options": ["Increase power", "Solve differential equations", "Reduce bandwidth", "Measure noise"],
+      "answer": "Solve differential equations"
+    },
+    {
+      "id": "b13",
+      "question": "Transfer function is defined as:",
+      "options": ["Input/Output", "Output/Input (Laplace domain)", "Gain × Frequency", "Error/Input"],
+      "answer": "Output/Input (Laplace domain)"
+    },
+    {
+      "id": "b14",
+      "question": "Signal-to-Noise Ratio (SNR) should be:",
+      "options": ["Low", "Zero", "High", "Negative"],
+      "answer": "High"
+    },
+    {
+      "id": "b15",
+      "question": "Phase Modulation (PM) is a type of:",
+      "options": ["Linear modulation", "Angle modulation", "Pulse modulation", "Digital modulation"],
+      "answer": "Angle modulation"
+    },
+    {
+      "id": "b16",
+      "question": "Stability of control system can be checked using:",
+      "options": ["Ohm’s Law", "Routh-Hurwitz Criterion", "Kirchhoff’s Law", "Superposition theorem"],
+      "answer": "Routh-Hurwitz Criterion"
+    },
+    {
+      "id": "b17",
+      "question": "Nyquist plot is used to determine:",
+      "options": ["Bandwidth", "Gain", "Stability", "Noise"],
+      "answer": "Stability"
+    },
+    {
+      "id": "b18",
+      "question": "In a second-order control system, overshoot depends on:",
+      "options": ["Gain only", "Damping ratio", "Frequency only", "Resistance"],
+      "answer": "Damping ratio"
+    },
+    {
+      "id": "b19",
+      "question": "Shannon’s theorem relates to:",
+      "options": ["Control stability", "Channel capacity", "Feedback gain", "Transfer function"],
+      "answer": "Channel capacity"
+    },
+    {
+      "id": "b20",
+      "question": "Root locus method shows:",
+      "options": ["Time response", "Frequency response", "Pole movement with gain", "Noise power"],
+      "answer": "Pole movement with gain"
+    }
   ],
   "rapidFireRound": [
-    { "id": "r1", "question": "2 + 2 = ?", "options": ["3", "4", "5", "6"], "answer": "4" },
-    { "id": "r2", "question": "Capital of Italy?", "options": ["Venice", "Milan", "Naples", "Rome"], "answer": "Rome" },
-    { "id": "r3", "question": "Color of an emerald?", "options": ["Red", "Blue", "Green", "Yellow"], "answer": "Green" },
-    { "id": "r4", "question": "Opposite of 'hot'?", "options": ["Cold", "Warm", "Dry", "Wet"], "answer": "Cold" },
-    { "id": "r5", "question": "How many legs does a spider have?", "options": ["6", "8", "10", "12"], "answer": "8" },
-    { "id": "r6", "question": "Largest mammal?", "options": ["Elephant", "Blue Whale", "Giraffe", "Shark"], "answer": "Blue Whale" },
-    { "id": "r7", "question": "Fastest land animal?", "options": ["Lion", "Cheetah", "Horse", "Eagle"], "answer": "Cheetah" },
-    { "id": "r8", "question": "First man on the moon?", "options": ["Gagarin", "Armstrong", "Aldrin", "Glenn"], "answer": "Armstrong" },
-    { "id": "r9", "question": "Boiling point of water (Celsius)?", "options": ["90", "100", "110", "120"], "answer": "100" },
-    { "id": "r10", "question": "Number of continents?", "options": ["5", "6", "7", "8"], "answer": "7" }
+    {
+      "id": "r1",
+      "question": "A unity feedback system has open-loop transfer function G(s) = K/(s(s+1)(s+2)). The system becomes unstable when K is:",
+      "options": ["K > 6", "K < 0", "K > 2", "K > 10"],
+      "answer": "K > 6"
+    },
+    {
+      "id": "r2",
+      "question": "For a second-order system, peak overshoot depends primarily on:",
+      "options": ["Natural frequency", "Damping ratio", "Gain only", "Time constant"],
+      "answer": "Damping ratio"
+    },
+    {
+      "id": "r3",
+      "question": "A system is controllable if:",
+      "options": ["All poles are negative", "Controllability matrix has full rank", "Gain is positive", "Output is measurable"],
+      "answer": "Controllability matrix has full rank"
+    },
+    {
+      "id": "r4",
+      "question": "Root locus shows the movement of:",
+      "options": ["Zeros", "Poles as gain varies", "Gain with frequency", "Time response"],
+      "answer": "Poles as gain varies"
+    },
+    {
+      "id": "r5",
+      "question": "Phase margin improves system:",
+      "options": ["Speed", "Stability", "Noise", "Power"],
+      "answer": "Stability"
+    },
+    {
+      "id": "r6",
+      "question": "In FM, bandwidth is given by:",
+      "options": ["2fm", "2(fc + fm)", "2(Δf + fm)", "fm"],
+      "answer": "2(Δf + fm)"
+    },
+    {
+      "id": "r7",
+      "question": "In coherent detection of BPSK, BER depends on:",
+      "options": ["Carrier frequency", "SNR", "Antenna size", "Bandwidth only"],
+      "answer": "SNR"
+    },
+    {
+      "id": "r8",
+      "question": "Shannon capacity formula is:",
+      "options": ["C = B log₂(1 + S/N)", "C = S/N", "C = 2B", "C = B/S"],
+      "answer": "C = B log₂(1 + S/N)"
+    },
+    {
+      "id": "r9",
+      "question": "In DSB-SC, carrier is:",
+      "options": ["Fully transmitted", "Suppressed", "Amplified", "Doubled"],
+      "answer": "Suppressed"
+    },
+    {
+      "id": "r10",
+      "question": "PLL is mainly used for:",
+      "options": ["Power control", "Frequency synthesis and synchronization", "Noise generation", "Amplification"],
+      "answer": "Frequency synthesis and synchronization"
+    },
+    {
+      "id": "r11",
+      "question": "Minimum number of NAND gates required to implement XOR is:",
+      "options": ["2", "3", "4", "5"],
+      "answer": "4"
+    },
+    {
+      "id": "r12",
+      "question": "Race condition occurs in:",
+      "options": ["Combinational circuits", "Sequential circuits", "Resistors", "Capacitors"],
+      "answer": "Sequential circuits"
+    },
+    {
+      "id": "r13",
+      "question": "Hazard in logic circuits is caused due to:",
+      "options": ["Temperature", "Delay differences", "Power supply", "Clock speed"],
+      "answer": "Delay differences"
+    },
+    {
+      "id": "r14",
+      "question": "A 4-variable K-map contains how many cells?",
+      "options": ["8", "16", "32", "4"],
+      "answer": "16"
+    },
+    {
+      "id": "r15",
+      "question": "Setup time violation results in:",
+      "options": ["Stable output", "Metastability", "Faster operation", "No change"],
+      "answer": "Metastability"
+    },
+    {
+      "id": "r16",
+      "question": "In CMOS inverter, power dissipation is mainly due to:",
+      "options": ["Static current", "Dynamic switching", "Resistance", "Capacitance only"],
+      "answer": "Dynamic switching"
+    },
+    {
+      "id": "r17",
+      "question": "Nyquist stability criterion is based on:",
+      "options": ["Time response", "Pole location", "Frequency response", "State equation"],
+      "answer": "Frequency response"
+    },
+    {
+      "id": "r18",
+      "question": "Z-transform is mainly used for analysis of:",
+      "options": ["Continuous systems", "Discrete-time systems", "Analog circuits", "Power systems"],
+      "answer": "Discrete-time systems"
+    },
+    {
+      "id": "r19",
+      "question": "In sampling theorem, minimum sampling frequency is:",
+      "options": ["fm", "2fm", "4fm", "fc"],
+      "answer": "2fm"
+    },
+    {
+      "id": "r20",
+      "question": "In state-space representation, stability depends on:",
+      "options": ["Input", "Output", "Eigenvalues of A matrix", "Gain only"],
+      "answer": "Eigenvalues of A matrix"
+    }
   ]
 }
