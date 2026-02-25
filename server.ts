@@ -52,10 +52,14 @@ interface QuizState {
   buzzerWinner: string | null;
   buzzerReactionTime: number | null;
   buzzerBuzzes: BuzzerBuzz[];
+  // Absolute timestamp (ms) when buzzer window closes after first buzz
+  buzzerWindowEndTime: number | null;
   questionStartTime: number | null;
   rapidFireTimer: number;
   isRapidFireRunning: boolean;
   localIp: string;
+  // Tracks which teams have already scored for a given Rapid Fire question (by question id)
+  rapidFireAnsweredTeams: Record<string, string[]>;
   questions: {
     passRound: Question[];
     buzzerRound: Question[];
@@ -79,10 +83,12 @@ const state: QuizState = {
   buzzerWinner: null,
   buzzerReactionTime: null,
   buzzerBuzzes: [],
+  buzzerWindowEndTime: null,
   questionStartTime: null,
   rapidFireTimer: 8,
   isRapidFireRunning: false,
   localIp: "Detecting...",
+  rapidFireAnsweredTeams: {},
   questions: {
     passRound: shuffle([...questionsData.passRound]),
     buzzerRound: shuffle([...questionsData.buzzerRound]),
@@ -157,6 +163,7 @@ async function startServer() {
           state.currentRound = payload.round;
           state.currentQuestionIndex = 0;
           state.buzzerLocked = false;
+          state.buzzerWindowEndTime = null;
           state.buzzerWinner = null;
           state.buzzerReactionTime = null;
           state.buzzerBuzzes = [];
@@ -167,19 +174,20 @@ async function startServer() {
             const teamIds = Object.keys(state.teams);
             state.activeTeamId = teamIds.length > 0 ? teamIds[0] : null;
           } else if (state.currentRound === 2) {
-            // Start timing for the first buzzer question
             state.questionStartTime = Date.now();
           } else if (state.currentRound === 3) {
             state.rapidFireTimer = 8;
+            state.rapidFireAnsweredTeams = {};
           }
           break;
 
         case "NEXT_QUESTION":
           state.currentQuestionIndex++;
           state.buzzerLocked = false;
+          state.buzzerWindowEndTime = null;
           state.buzzerWinner = null;
           state.buzzerReactionTime = null;
-           state.buzzerBuzzes = [];
+          state.buzzerBuzzes = [];
           state.questionStartTime = Date.now();
           break;
 
@@ -194,6 +202,7 @@ async function startServer() {
           state.buzzerWinner = null;
           state.buzzerReactionTime = null;
           state.buzzerBuzzes = [];
+          state.buzzerWindowEndTime = null;
           state.questionStartTime = Date.now();
           break;
 
@@ -212,6 +221,16 @@ async function startServer() {
             state.currentRound = 0;
             state.currentQuestionIndex = 0;
             state.teams = {};
+            state.activeTeamId = null;
+            state.buzzerLocked = false;
+            state.buzzerWinner = null;
+            state.buzzerReactionTime = null;
+            state.buzzerBuzzes = [];
+            state.buzzerWindowEndTime = null;
+            state.questionStartTime = null;
+            state.rapidFireTimer = 8;
+            state.isRapidFireRunning = false;
+            state.rapidFireAnsweredTeams = {};
             break;
       }
 
@@ -220,16 +239,27 @@ async function startServer() {
 
     socket.on("buzz", (teamId: string) => {
       if (state.currentRound !== 2) return;
+      // Once the buzzer window is fully locked, ignore further buzzes
+      if (state.buzzerLocked) return;
 
-      const reactionTime = state.questionStartTime ? Date.now() - state.questionStartTime : 0;
+      const now = Date.now();
+      const reactionTime = state.questionStartTime ? now - state.questionStartTime : 0;
 
-      // Track every team’s reaction time for transparency
+      // Prevent duplicate buzz entries from the same team for a single question
+      const alreadyBuzzed = state.buzzerBuzzes.some((b) => b.teamId === teamId);
+      if (alreadyBuzzed) {
+        return;
+      }
+
+      // Track every team’s reaction time for transparency (for the current question)
       state.buzzerBuzzes.push({ teamId, reactionTime });
 
-      if (!state.buzzerLocked) {
-        state.buzzerLocked = true;
+      // First buzz: decide winner and start a 2.5s window during which
+      // other teams can still buzz (for visibility of their times).
+      if (!state.buzzerWinner) {
         state.buzzerWinner = teamId;
         state.buzzerReactionTime = reactionTime;
+        state.buzzerWindowEndTime = now + 2500;
         io.emit("buzzerEffect", { teamId, reactionTime });
       }
 
@@ -246,17 +276,30 @@ async function startServer() {
       
       if (!currentQuestion) return;
 
+      const currentQuestionId = currentQuestion.id;
+      if (!state.rapidFireAnsweredTeams[currentQuestionId]) {
+        state.rapidFireAnsweredTeams[currentQuestionId] = [];
+      }
+      const hasTeamScoredThisRapidQuestion =
+        state.currentRound === 3 &&
+        state.rapidFireAnsweredTeams[currentQuestionId].includes(teamId);
+
       // Check if it's the team's turn or if they won the buzzer
       const isAllowed = 
         (state.currentRound === 1 && state.activeTeamId === teamId) ||
         (state.currentRound === 2 && state.buzzerWinner === teamId) ||
-        (state.currentRound === 3 && state.isRapidFireRunning); // In Rapid Fire, anyone can answer? 
+        (state.currentRound === 3 && state.isRapidFireRunning && !hasTeamScoredThisRapidQuestion);
         // Actually for Rapid Fire, usually it's one team at a time, but let's assume activeTeamId for RF too if set.
         // For now, let's just check if it's correct.
 
       if (isAllowed && answer === currentQuestion.answer) {
         const points = state.currentRound === 1 ? 1 : state.currentRound === 2 ? 1.5 : 2;
         state.teams[teamId].score += points;
+        
+        // Mark that this team has already scored for this Rapid Fire question
+        if (state.currentRound === 3) {
+          state.rapidFireAnsweredTeams[currentQuestionId].push(teamId);
+        }
         
         // Auto-advance for Pass and Buzzer rounds only.
         // In Rapid Fire we keep the same question alive for the whole timer
@@ -302,6 +345,7 @@ async function startServer() {
 
   // Rapid Fire Timer Logic
   setInterval(() => {
+    // Handle Rapid Fire countdown and question progression
     if (state.currentRound === 3 && state.isRapidFireRunning) {
       state.rapidFireTimer -= 1;
       if (state.rapidFireTimer <= 0) {
@@ -314,6 +358,24 @@ async function startServer() {
           state.currentQuestionIndex = state.questions.rapidFireRound.length - 1;
         }
       }
+    }
+
+    // Handle buzzer lock window after first buzz in Round 2
+    if (
+      state.currentRound === 2 &&
+      !state.buzzerLocked &&
+      state.buzzerWinner &&
+      state.buzzerWindowEndTime !== null &&
+      Date.now() >= state.buzzerWindowEndTime
+    ) {
+      state.buzzerLocked = true;
+    }
+
+    // Emit state whenever either timer logic may have changed it
+    if (
+      (state.currentRound === 3 && state.isRapidFireRunning) ||
+      (state.currentRound === 2 && state.buzzerWinner && state.buzzerWindowEndTime !== null)
+    ) {
       io.emit("stateUpdate", state);
     }
   }, 1000);

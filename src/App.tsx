@@ -50,10 +50,12 @@ interface QuizState {
   buzzerWinner: string | null;
   buzzerReactionTime: number | null;
   buzzerBuzzes: { teamId: string; reactionTime: number }[];
+  buzzerWindowEndTime: number | null;
   questionStartTime: number | null;
   rapidFireTimer: number;
   isRapidFireRunning: boolean;
   localIp: string;
+  rapidFireAnsweredTeams: Record<string, string[]>;
   questions: {
     passRound: Question[];
     buzzerRound: Question[];
@@ -329,7 +331,7 @@ const TeamControl = ({
               {currentQuestion?.question}
             </div>
 
-            {state.buzzerLocked && state.buzzerWinner === myTeam.id ? (
+            {state.buzzerWinner === myTeam.id ? (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -737,7 +739,7 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
                   </div>
                 )}
 
-                {state.currentRound === 2 && state.buzzerLocked && (
+                {state.currentRound === 2 && state.buzzerWinner && (
                   <div className="flex flex-col items-center gap-8 w-full">
                     <div className="text-2xl text-rose-500 font-black uppercase tracking-widest animate-pulse">BUZZER HIT!</div>
                     <div className="px-12 py-6 bg-rose-600 text-white text-5xl font-black rounded-3xl shadow-[0_0_40px_rgba(225,29,72,0.6)] flex flex-col items-center">
