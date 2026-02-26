@@ -12,7 +12,9 @@ import {
   RotateCcw, 
   Timer,
   Smartphone,
-  Monitor
+  Monitor,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -59,6 +61,7 @@ interface QuizState {
   isRapidFireRunning: boolean;
   localIp: string;
   rapidFireAnsweredTeams: Record<string, string[]>;
+  showAnswer: boolean;
   questions: {
     passRound: Question[];
     buzzerRound: Question[];
@@ -503,7 +506,7 @@ const AdminPanel = ({
             <div className="flex justify-between items-center border-b border-white/10 pb-2">
               <h3 className="text-xl font-bold">Round Control</h3>
               <div className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">
-                R1: 1pt | R2: 1.5pt | R3: 2pt
+                20 Q per round · R1: 1pt | R2: 1.5pt | R3: 2pt
               </div>
             </div>
             <div className="grid grid-cols-1 gap-3">
@@ -535,9 +538,14 @@ const AdminPanel = ({
 
             {state.currentRound > 0 && (
               <div className="pt-4 border-t border-white/10 space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Question {state.currentQuestionIndex + 1}</span>
-                  <Button onClick={() => adminAction("NEXT_QUESTION")} variant="neon" className="py-2 px-4">Next Q</Button>
+                <div className="flex justify-between items-center flex-wrap gap-2">
+                  <span className="text-slate-400">Question {state.currentQuestionIndex + 1} / {state.currentRound === 1 ? state.questions.passRound.length : state.currentRound === 2 ? state.questions.buzzerRound.length : state.questions.rapidFireRound.length}</span>
+                  <div className="flex gap-2">
+                    <Button onClick={() => adminAction("TOGGLE_SHOW_ANSWER", { show: !state.showAnswer })} variant={state.showAnswer ? "success" : "secondary"} className="py-2 px-4 flex items-center gap-2">
+                      {state.showAnswer ? <><EyeOff size={18} /> Hide Answer</> : <><Eye size={18} /> Show Answer</>}
+                    </Button>
+                    <Button onClick={() => adminAction("NEXT_QUESTION")} variant="neon" className="py-2 px-4">Next Q</Button>
+                  </div>
                 </div>
                 {state.currentRound === 1 && (
                   <Button onClick={() => adminAction("PASS_CONTROL")} variant="secondary" className="w-full">Pass to Next Team</Button>
@@ -704,6 +712,16 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
                     {currentQuestion?.question || "Waiting for next question..."}
                   </h2>
                 </div>
+
+                {/* Correct Answer - when admin toggles Show Answer */}
+                {state.showAnswer && currentQuestion && (
+                  <div className="flex flex-col items-center">
+                    <div className="px-8 py-5 bg-emerald-500/20 border-2 border-emerald-500 rounded-2xl shadow-[0_0_25px_rgba(16,185,129,0.3)]">
+                      <span className="text-slate-300 font-bold uppercase tracking-widest text-sm">Correct Answer</span>
+                      <p className="text-4xl font-black text-emerald-400 mt-2">{currentQuestion.answer}</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Options Display - Only for Rapid Fire */}
                 {state.currentRound === 3 && currentQuestion?.options && (

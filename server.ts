@@ -63,6 +63,7 @@ interface QuizState {
   localIp: string;
   // Tracks which teams have already scored for a given Rapid Fire question (by question id)
   rapidFireAnsweredTeams: Record<string, string[]>;
+  showAnswer: boolean;
   questions: {
     passRound: Question[];
     buzzerRound: Question[];
@@ -92,6 +93,7 @@ const state: QuizState = {
   isRapidFireRunning: false,
   localIp: "Detecting...",
   rapidFireAnsweredTeams: {},
+  showAnswer: false,
   questions: {
     passRound: shuffle([...questionsData.passRound]),
     buzzerRound: shuffle([...questionsData.buzzerRound]),
@@ -168,6 +170,7 @@ async function startServer() {
         case "START_ROUND":
           state.currentRound = payload.round;
           state.currentQuestionIndex = 0;
+          state.showAnswer = false;
           state.buzzerLocked = false;
           state.buzzerWindowEndTime = null;
           state.buzzerWinner = null;
@@ -189,6 +192,7 @@ async function startServer() {
 
         case "NEXT_QUESTION":
           state.currentQuestionIndex++;
+          state.showAnswer = false;
           state.buzzerLocked = false;
           state.buzzerWindowEndTime = null;
           state.buzzerWinner = null;
@@ -236,7 +240,11 @@ async function startServer() {
         case "TOGGLE_RAPID_FIRE":
           state.isRapidFireRunning = payload.running;
           break;
-          
+
+        case "TOGGLE_SHOW_ANSWER":
+          state.showAnswer = payload?.show ?? !state.showAnswer;
+          break;
+
         case "RESET_QUIZ":
             state.currentRound = 0;
             state.currentQuestionIndex = 0;
@@ -251,6 +259,7 @@ async function startServer() {
             state.rapidFireTimer = 8;
             state.isRapidFireRunning = false;
             state.rapidFireAnsweredTeams = {};
+            state.showAnswer = false;
             break;
       }
 
