@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { QRCodeSVG } from "qrcode.react";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -674,22 +673,12 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
               <h2 className="text-8xl font-black text-white">GET READY!</h2>
               <p className="text-3xl text-slate-400">Teams are joining the arena...</p>
               
-              {/* Big IP Display & QR for Lobby */}
-              <div className="mt-12 flex flex-col sm:flex-row items-center gap-8 p-8 bg-cyan-400/5 border-2 border-cyan-400/20 rounded-[2rem]">
-                <div className="flex-1 text-center sm:text-left">
-                  <p className="text-slate-500 font-bold uppercase tracking-widest mb-2">Connect your phones to:</p>
-                  <p className="text-4xl sm:text-5xl lg:text-6xl font-mono font-black text-cyan-400 break-all">
-                    http://{state.localIp === "Detecting..." ? window.location.hostname : state.localIp}:3000
-                  </p>
-                </div>
-                <div className="flex-shrink-0 p-4 bg-white rounded-2xl">
-                  <QRCodeSVG
-                    value={`http://${state.localIp === "Detecting..." ? window.location.hostname : state.localIp}:3000`}
-                    size={180}
-                    level="M"
-                    includeMargin={false}
-                  />
-                </div>
+              {/* Big IP Display for Lobby */}
+              <div className="mt-12 p-8 bg-cyan-400/5 border-2 border-cyan-400/20 rounded-[2rem] inline-block">
+                <p className="text-slate-500 font-bold uppercase tracking-widest mb-2">Connect your phones to:</p>
+                <p className="text-6xl font-mono font-black text-cyan-400">
+                  http://{state.localIp === "Detecting..." ? window.location.hostname : state.localIp}:3000
+                </p>
               </div>
 
               <div className="flex flex-wrap justify-center gap-4 mt-12">
@@ -863,26 +852,17 @@ const MainDisplay = ({ state }: { state: QuizState }) => {
       </div>
 
       {/* Footer Info */}
-      <div className="mt-12 pt-6 border-t border-white/5 flex flex-wrap justify-between items-center gap-4 text-slate-500 font-bold uppercase tracking-widest">
+      <div className="mt-12 pt-6 border-t border-white/5 flex justify-between items-center text-slate-500 font-bold uppercase tracking-widest">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Users size={20} />
             <span>{Object.keys(state.teams).length} Teams Connected</span>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-sm">
-            Local Server: <span className="text-slate-300 font-mono">
-              http://{state.localIp === "Detecting..." ? window.location.hostname : state.localIp}:3000
-            </span>
-          </div>
-          <div className="p-2 bg-white rounded-lg" title="Scan to connect">
-            <QRCodeSVG
-              value={`http://${state.localIp === "Detecting..." ? window.location.hostname : state.localIp}:3000`}
-              size={64}
-              level="M"
-            />
-          </div>
+        <div className="text-sm">
+          Local Server: <span className="text-slate-300 font-mono">
+            http://{state.localIp === "Detecting..." ? window.location.hostname : state.localIp}:3000
+          </span>
         </div>
       </div>
     </div>
